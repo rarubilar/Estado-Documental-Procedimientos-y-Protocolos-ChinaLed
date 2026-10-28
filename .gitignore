@@ -1,0 +1,15 @@
+# Public repository: only what GitHub needs to build the dashboard page.
+/*
+!/.gitignore
+!/README.md
+!/estado.json
+!/.github/
+!/assets/
+/assets/*
+!/assets/chinaled-logo.png
+!/dashboard/
+/dashboard/*
+!/dashboard/index.src.html
+!/dashboard/xlsx-reader.js
+!/dashboard/export-static.mjs
+!/dashboard/config.json

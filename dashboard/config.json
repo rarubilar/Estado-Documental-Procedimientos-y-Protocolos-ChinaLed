@@ -1,0 +1,20 @@
+{
+  "title": "Avance QA/QC PFV CSO",
+  "artifactUrl": "https://claude.ai/artifact/DsXuGGZSEhNX9GnbMtAdnN",
+  "connector": "Google Drive",
+  "driveFolder": {
+    "name": "SANDRO'S",
+    "id": "1eHSsgXuCzfZY6j4_7kPCHFvxMXv0Hqh5"
+  },
+  "procedimientos": {
+    "fileName": "Matriz procedimiento Cerro Sombrero v3 (definitiva).xlsx",
+    "fileId": "1TZZrlXjKoaCWbH5vOw0zsZKJlm6R8Prq"
+  },
+  "protocolos": {
+    "fileName": "Matriz protocolo Cerro Sombrero v7 (definitiva).xlsx",
+    "fileId": "1k4WRfRb1bg3xtTUs91zHT7U3gaU4K0Zy"
+  },
+  "shareArtifactUrl": "https://claude.ai/artifact/SkLcgeXmXGLxZNf8EjX6mh",
+  "staticShareUrl": "https://claude.ai/artifact/WEXaJnJVnK5ejQ1i7xWp1Q",
+  "staticShareCodeUrl": "https://claude.ai/code/artifact/ecbc883e-5ae3-44fb-abd0-b3537391dfab"
+}

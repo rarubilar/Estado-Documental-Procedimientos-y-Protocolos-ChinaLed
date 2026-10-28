@@ -1,0 +1,1339 @@
+<style>
+  /* Layout: white page band; brand header, then summary (hero with pie + KPI tiles), two breakdown cards, then the filterable table. */
+  #dash-root { --dash-gutter: 0; }
+  .cso-page {
+    /* Fixed light look (white background) whatever the viewer's theme. */
+    --color-bg: #FFFFFF;
+    --color-panel: #FFFFFF;
+    --color-fg: #1B2430;
+    --color-fg-muted: #5F6B7A;
+    --color-border-line: #E1E6ED;
+    --color-bad: #990000;
+    --cds-chart-grid: #EEF1F5;
+    --cl-blue: #004EBC;
+    --cl-green: #66BC2A;
+    --xl-navy: #1F4E79;
+    --fs-caption: calc(var(--cds-font-size-caption) * 1.15);
+    --fs-body: calc(var(--cds-font-size-body) * 1.15);
+    --fs-heading: calc(var(--cds-font-size-heading) * 1.15);
+    --fs-title: calc(var(--cds-font-size-title) * 1.15);
+    color-scheme: light;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    padding-block: var(--cds-pad-xl);
+    padding-left: max(16px, 3vw);
+    padding-right: max(16px, 3vw);
+  }
+  .cso {
+    font-family: var(--font-anthropic-sans);
+    font-size: var(--fs-body);
+    color: var(--color-fg);
+    display: grid;
+    gap: calc(var(--cds-gap-xl) * 1.25);
+    max-width: 1400px;
+    margin-inline: auto;
+  }
+  .cso * { box-sizing: border-box; }
+
+  /* Header */
+  .cso-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-md) var(--cds-gap-lg); padding-bottom: var(--cds-pad-md); border-bottom: 2px solid var(--cl-blue); }
+  .cso-logo { height: 50px; width: auto; flex: none; }
+  .cso-titles { flex: 1 1 18rem; min-width: 0; display: grid; gap: 2px; }
+  .cso-eyebrow { font-size: var(--fs-caption); letter-spacing: .06em; text-transform: uppercase; color: var(--color-fg-muted); }
+  .cso-title { margin: 0; font-size: var(--fs-title); font-weight: 600; line-height: 1.2; text-wrap: balance; color: var(--color-fg); }
+  .cso-title b { color: var(--cl-blue); font-weight: 600; }
+
+  /* View switch (Procedimientos / Protocolos) */
+  .cso-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--color-border-line); border-radius: 8px; background: #F5F7FA; }
+  .cso-switch button { all: unset; cursor: pointer; padding: 8px 18px; border-radius: 6px; font-size: var(--fs-body); font-weight: 500; color: var(--color-fg-muted); }
+  .cso-switch button:hover { color: var(--color-fg); }
+  .cso-switch button[aria-selected="true"] { background: var(--cl-blue); color: #FFFFFF; }
+  .cso-switch button:focus-visible { outline: 2px solid var(--cl-blue); outline-offset: 2px; }
+  .cso-view { display: grid; gap: calc(var(--cds-gap-xl) * 1.25); }
+  .cso [hidden] { display: none !important; }
+
+  /* Cards */
+  .cso-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: calc(var(--cds-pad-lg) * 1.25); min-width: 0; }
+  .cso-card h2 { margin: 0; font-size: var(--fs-heading); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+  .cso-note { margin: 2px 0 0; font-size: var(--fs-caption); color: var(--color-fg-muted); }
+  .cso-cardhead { display: grid; gap: 2px; margin-bottom: var(--cds-pad-md); }
+
+  /* Summary */
+  /* One card: summary band on top, then pie | KPI rows | disciplines, all the same height. */
+  .cso-summary {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas: "hero hero hero" "pie kpis disc";
+    column-gap: calc(var(--cds-gap-xl) * 1.25);
+    row-gap: var(--cds-gap-lg);
+    align-items: stretch;
+    position: relative;
+  }
+  .cso-hero { grid-area: hero; display: grid; gap: var(--cds-gap-md); padding-bottom: var(--cds-gap-lg); border-bottom: 1px solid var(--color-border-line); }
+  .cso-hero-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--cds-gap-sm) var(--cds-gap-xl); }
+  .cso-hero-top .cso-cardhead { margin-bottom: 0; }
+  .cso-card.cso-summary .cso-hero h2 { font-size: calc(var(--fs-title) * 1.2); font-weight: 600; letter-spacing: -.01em; }
+
+  /* Protocol summary: adds a full-width grid of protocol tiles under the three columns */
+  /* Two classes, so these win over the plain .cso-summary breakpoints further down. */
+  .cso-summary.cso-summary-pt { grid-template-areas: "hero hero hero" "pie kpis disc" "prot prot prot"; }
+  @media (max-width: 1180px) { .cso-summary.cso-summary-pt { grid-template-areas: "hero hero" "pie kpis" "disc disc" "prot prot"; } }
+  @media (max-width: 680px) { .cso-summary.cso-summary-pt { grid-template-areas: "hero" "pie" "kpis" "disc" "prot"; } }
+  .cso-pt-grid-wrap { grid-area: prot; padding-top: var(--cds-gap-lg); border-top: 1px solid var(--color-border-line); min-width: 0; }
+  .cso-pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr)); gap: var(--cds-gap-md); min-height: 8rem; }
+  .cso-tile { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; align-content: start; padding: 10px 12px; border: 1px solid var(--color-border-line); border-top: 4px solid var(--tile-c); border-radius: 6px; background: #FFFFFF; font-size: var(--fs-caption); color: var(--color-fg); min-width: 0; }
+  .cso-tile:hover { background: #F7F9FC; }
+  .cso-tile:focus-visible { outline: 2px solid var(--cl-blue); outline-offset: 1px; }
+  .cso-tile-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+  .cso-tile-top .cso-chip { font-family: var(--font-anthropic-mono, ui-monospace, monospace); font-size: calc(11px * 1.15); }
+  .cso-tile-tipo { font-size: calc(10px * 1.15); letter-spacing: .06em; color: #FFFFFF; background: var(--xl-navy); border-radius: 3px; padding: 1px 5px; }
+  .cso-tile-name { font-size: var(--fs-caption); line-height: 1.3; min-height: 2.6em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cso-tile-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .cso-tile-meta .cso-chip, .cso-tile-meta .cso-pill { font-size: calc(10.5px * 1.15); padding: 2px 6px; }
+  .cso-tile-nums { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+  .cso-tile-nums b { font-size: 1.15rem; font-weight: 600; }
+  .cso-tile-nums small { color: var(--color-fg-muted); }
+  .cso-tile-pct { font-weight: 600; padding: 2px 7px; border-radius: 4px; background: var(--pct-bg); color: #1B2430; }
+  .cso-tile .cso-stack { height: 8px; }
+  .cso-tile-x { color: var(--color-fg-muted); font-style: italic; }
+
+  /* Three equal panes inside one card */
+  .cso-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: calc(var(--cds-gap-xl) * 1.25); align-items: stretch; }
+  .cso-trio > .cso-pane { min-width: 0; display: flex; flex-direction: column; }
+  .cso-trio > .cso-pane + .cso-pane { padding-left: calc(var(--cds-gap-xl) * 1.25); border-left: 1px solid var(--color-border-line); }
+  .cso-trio-head { grid-column: 1 / -1; margin-bottom: var(--cds-gap-lg); }
+  @media (max-width: 1000px) {
+    .cso-trio { grid-template-columns: minmax(0, 1fr); row-gap: var(--cds-gap-lg); }
+    .cso-trio > .cso-pane + .cso-pane { padding-left: 0; border-left: 0; padding-top: var(--cds-gap-lg); border-top: 1px solid var(--color-border-line); }
+  }
+  .cso-pane h3 { margin: 0; font-size: var(--fs-body); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+  .cso-pane .cso-cardhead { margin-bottom: var(--cds-gap-sm); }
+  .cso-pane > .cso-stack { margin-block: 4px var(--cds-gap-sm); }
+  .cso-pane .cso-bars { flex: 1; grid-auto-rows: 1fr; align-content: stretch; }
+  .cso-pie-legend li.cso-click { cursor: pointer; border-radius: 6px; }
+  .cso-pie-legend li.cso-click:hover { background: #F3F6FA; }
+  .cso-pie-legend li.cso-click[aria-pressed="true"] { background: #E8EFF8; }
+  .cso-pie-legend li.cso-click:focus-visible { outline: 2px solid var(--cl-blue); outline-offset: 1px; }
+
+  /* Metric with meter (IAC, field execution) */
+  .cso-metrics { display: grid; gap: 0; flex: 1; align-content: space-around; }
+  .cso-metric { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--color-border-line); }
+  .cso-metric:last-child { border-bottom: 0; }
+  .cso-metric-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--cds-gap-sm); }
+  .cso-metric-num { font-size: 1.85rem; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--m-fg); white-space: nowrap; }
+  .cso-metric-num small { font-size: var(--fs-caption); color: var(--color-fg-muted); font-weight: 400; margin-left: 4px; }
+  .cso-meter { height: 10px; border-radius: 5px; background: #EEF1F5; overflow: hidden; }
+  .cso-meter > span { display: block; height: 100%; background: var(--m-bg); box-shadow: inset 0 0 0 1px var(--edge); border-radius: 5px; }
+  .cso-gapnote { font-size: var(--fs-caption); color: var(--color-fg-muted); }
+  .cso-gapnote b { color: #C00000; font-weight: 600; }
+  .cso-hero-row { display: flex; align-items: baseline; gap: var(--cds-gap-sm); flex-wrap: wrap; }
+  .cso-sum-pie { grid-area: pie; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  .cso-sum-kpis { grid-area: kpis; display: flex; align-items: center; min-width: 0; }
+  .cso-sum-disc { grid-area: disc; display: flex; flex-direction: column; min-width: 0; padding-left: calc(var(--cds-gap-xl) * 1.25); border-left: 1px solid var(--color-border-line); }
+  .cso-sum-disc h3 { margin: 0; font-size: var(--fs-body); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+  .cso-sum-disc .cso-cardhead { margin-bottom: var(--cds-gap-sm); }
+  .cso-sum-disc .cso-bars { flex: 1; grid-auto-rows: 1fr; align-content: stretch; }
+  @media (max-width: 1180px) {
+    .cso-summary { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); grid-template-areas: "hero hero" "pie kpis" "disc disc"; }
+    .cso-sum-disc { padding-left: 0; border-left: 0; padding-top: var(--cds-gap-lg); border-top: 1px solid var(--color-border-line); }
+  }
+  @media (max-width: 680px) {
+    .cso-summary { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "pie" "kpis" "disc"; }
+  }
+  .cso-big { font-size: 3.75rem; line-height: 1; font-weight: 600; color: #006100; font-variant-numeric: tabular-nums; }
+  .cso-of { color: var(--color-fg-muted); font-size: var(--fs-body); font-variant-numeric: tabular-nums; }
+  .cso-of b { color: var(--color-fg); font-weight: 600; }
+  .cso-stack { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; }
+  .cso-stack > span { display: block; height: 100%; min-width: 0; box-shadow: inset 0 0 0 1px var(--edge); }
+  .cso-sw { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px var(--edge); }
+
+  .cso-pie-svg { width: 100%; max-width: 300px; min-width: 180px; aspect-ratio: 1; }
+  .cso-pie-svg svg { display: block; max-width: 100%; }
+  /* KPI rows merged with the pie legend */
+  .cso-pie-legend { width: 100%; min-width: 0; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .cso-pie-legend li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 3.4em; align-items: center; column-gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--color-border-line); color: var(--color-fg); }
+  .cso-pie-legend li:last-child { border-bottom: 0; }
+  .cso-pie-legend li.cso-kpi-head { padding: 0 0 6px; font-size: calc(var(--fs-caption) * .9); letter-spacing: .06em; text-transform: uppercase; color: var(--color-fg-muted); opacity: .8; }
+  .cso-pie-legend li.cso-kpi-head span:nth-child(n+3) { text-align: right; }
+  .cso-pie-legend li.cso-total { border-top: 1px solid #C9D1DB; border-bottom: 0; }
+  .cso-pie-legend li.cso-total .cso-kpi-label { font-weight: 600; }
+  .cso-kpi-text { display: grid; min-width: 0; }
+  .cso-kpi-label { font-size: var(--fs-body); }
+  .cso-kpi-def { font-size: var(--fs-caption); color: var(--color-fg-muted); }
+  .cso-kpi-num { font-size: 1.85rem; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; color: var(--kpi-fg); }
+  .cso-pie-legend .cso-pct { font-size: var(--fs-caption); color: var(--color-fg-muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .cso-tip { position: absolute; pointer-events: none; background: #FFFFFF; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); box-shadow: 0 4px 14px rgba(20, 30, 50, .12); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--fs-caption); color: var(--color-fg); white-space: nowrap; z-index: 2; }
+
+  /* Breakdown bars */
+  .cso-bars { display: grid; gap: 4px; min-height: 8rem; }
+  .cso-bar { all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(8.5rem, 12.5rem) minmax(0, 1fr) 4.75rem; align-items: center; gap: var(--cds-gap-md); padding: 6px 8px; margin-inline: -8px; border-radius: 6px; cursor: pointer; font-size: var(--fs-body); }
+  .cso-bar:hover { background: #F3F6FA; }
+  .cso-bar:focus-visible { outline: 2px solid var(--cl-blue); outline-offset: 1px; }
+  .cso-bar[aria-pressed="true"] { background: #E8EFF8; }
+  .cso-bar-name { min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+  .cso-bar .cso-stack { height: 12px; }
+  .cso-bar-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--color-fg-muted); font-size: var(--fs-caption); white-space: nowrap; }
+  .cso-bar-val b { color: var(--color-fg); font-weight: 600; font-size: var(--fs-body); }
+
+  /* Excel-colored chips: discipline (row 6), procedure (row 7), responsible (row 5) */
+  .cso-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 8px; border-radius: 4px; font-size: var(--fs-caption); font-weight: 600; line-height: 1.3; background: var(--chip-bg, #E7E6E6); color: var(--chip-fg, #1B2430); }
+  .cso-chip-disc { --chip-fg: #FFFFFF; }
+  .cso-chip-resp { --chip-fg: var(--xl-navy); }
+  .cso-chip-none { background: none; color: var(--color-fg-muted); font-weight: 400; padding-inline: 0; }
+  .cso-tag { font-size: calc(10.5px * 1.15); line-height: 1; padding: 3px 6px; border-radius: 999px; white-space: nowrap; letter-spacing: .02em; color: var(--color-fg-muted); border: 1px solid var(--color-border-line); }
+  .cso-tag[data-k="Por crear"] { color: #990000; border-color: #F4CCCC; background: #FDF2F2; }
+  .cso-tag[data-k="Externo"] { color: #7F6000; border-color: #FFE699; background: #FFFBEA; }
+
+  /* Table */
+  .cso-tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-pad-md); }
+  .cso-tools input, .cso-tools select { font: inherit; font-size: var(--fs-body); color: var(--color-fg); background: #FFFFFF; border: 1px solid var(--color-border-line); border-radius: 6px; padding: 7px 10px; min-width: 0; }
+  .cso-tools input { flex: 1 1 14rem; }
+  .cso-tools select { flex: 0 1 13rem; }
+  .cso-tools input:focus-visible, .cso-tools select:focus-visible, .cso-clear:focus-visible, .cso-th:focus-visible { outline: 2px solid var(--cl-blue); outline-offset: 1px; }
+  .cso-clear { font: inherit; font-size: var(--fs-caption); background: none; border: 1px solid transparent; color: var(--cl-blue); cursor: pointer; padding: 6px 8px; border-radius: 6px; }
+  .cso-clear:hover { border-color: var(--color-border-line); }
+  .cso-count { font-size: var(--fs-caption); color: var(--color-fg-muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .cso-tablebox { max-height: 70vh; overflow: auto; border-top: 1px solid var(--color-border-line); }
+  .cso-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+  .cso-table th { position: sticky; top: 0; z-index: 1; background: #FFFFFF; text-align: left; font-weight: var(--cds-font-weight-medium); font-size: var(--fs-caption); color: var(--color-fg-muted); border-bottom: 1px solid var(--color-border-line); padding: 0; white-space: nowrap; }
+  .cso-th { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 9px 10px; cursor: pointer; letter-spacing: .02em; }
+  .cso-th::after { content: ""; display: inline-block; width: 1em; text-align: center; }
+  th[aria-sort="ascending"] .cso-th::after { content: "↑"; }
+  th[aria-sort="descending"] .cso-th::after { content: "↓"; }
+  .cso-table td { padding: 9px 10px; border-bottom: 1px solid var(--color-border-line); vertical-align: middle; color: var(--color-fg); }
+  .cso-table tbody tr:hover td { background: #F7F9FC; }
+  .cso-code { white-space: nowrap; }
+  .cso-code .cso-chip { --chip-fg: #FFFFFF; font-family: var(--font-anthropic-mono, ui-monospace, monospace); font-size: calc(12px * 1.15); }
+  .cso-name { min-width: 16rem; }
+  .cso-pill { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: var(--fs-caption); white-space: nowrap; background: var(--pc-bg); color: var(--pc-fg); }
+  .cso-rev { display: inline-block; min-width: 2.2em; text-align: center; padding: 2px 6px; border-radius: 4px; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
+  .cso-rev[data-t="Aprobada"] { background: #C6EFCE; border-color: #C6EFCE; color: #006100; }
+  .cso-rev[data-t="Con observaciones"] { background: #FFE699; border-color: #FFE699; color: #7F6000; }
+  .cso-rev[data-t="Devuelta a revisión"] { background: color-mix(in srgb, #F4CCCC calc(40% + var(--lv, 1) * 15%), #FFFFFF); border-color: #F4CCCC; color: #990000; font-weight: 600; }
+  .cso-empty { padding: var(--cds-pad-lg); text-align: center; color: var(--color-fg-muted); font-size: var(--fs-caption); }
+  .cso-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cso-num small { color: var(--color-fg-muted); }
+  .cso-table th.cso-th-num .cso-th { text-align: right; }
+  .cso-table td.cso-aprob { color: #006100; font-weight: 600; background: #EEF7E9; }
+  .cso-table tbody tr:hover td.cso-aprob { background: #E2F0D9; }
+  .cso-muted { color: var(--color-fg-muted); white-space: nowrap; }
+  .cso-act { min-width: 18rem; }
+  .cso-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 11rem; }
+  .cso-mini { font-family: var(--font-anthropic-mono, ui-monospace, monospace); font-size: calc(11px * 1.15); line-height: 1.3; padding: 2px 6px; border-radius: 4px; white-space: nowrap; background: var(--pc-bg); color: var(--pc-fg); }
+  .cso-cellbar { display: grid; gap: 4px; min-width: 7rem; }
+  .cso-cellbar .cso-stack { height: 8px; }
+  @media (max-width: 640px) { .cso-col-hide { display: none; } }
+
+  /* States */
+  .cso-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 6rem; color: var(--color-fg-muted); font-size: var(--fs-caption); }
+  .cso-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+  .cso [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  .cso [data-dash-source-state=empty] { color: transparent; }
+  .cso-foot { font-size: var(--fs-caption); color: var(--color-fg-muted); display: flex; flex-wrap: wrap; gap: 4px var(--cds-gap-md); }
+  /* Phone: one column, full-width switch, bars with the meter under the name, table without inner scroll */
+  @media (max-width: 560px) {
+    .cso-page { padding-block: 12px; }
+    .cso { gap: 16px; }
+    .cso-view { gap: 16px; }
+    .cso-head { gap: 10px; }
+    .cso-logo { height: 38px; }
+    .cso-titles { flex-basis: 12rem; }
+    .cso-switch { width: 100%; }
+    .cso-switch button { flex: 1; text-align: center; padding: 10px 8px; }
+    .cso-card { padding: 14px; }
+    .cso-card.cso-summary .cso-hero h2 { font-size: var(--fs-title); }
+    .cso-hero-top { align-items: flex-start; flex-direction: column; }
+    .cso-big { font-size: 3rem; }
+    .cso-sum-pie { padding-block: 4px; }
+    .cso-pie-svg { max-width: 230px; min-width: 0; }
+    .cso-pie-legend li { grid-template-columns: 12px minmax(0, 1fr) auto 2.8em; column-gap: 8px; padding: 8px 0; }
+    .cso-kpi-num { font-size: 1.5rem; }
+    .cso-bar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; padding: 8px; }
+    .cso-bar .cso-stack { grid-column: 1 / -1; grid-row: 2; }
+    .cso-pt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .cso-tile { padding: 8px 9px; }
+    .cso-tools input { flex-basis: 100%; }
+    .cso-tools select { flex: 1 1 45%; }
+    .cso-count { flex-basis: 100%; margin-left: 0; }
+    .cso-tablebox { max-height: none; overflow-x: auto; overflow-y: visible; margin-inline: -14px; padding-inline: 4px; }
+    .cso-table { font-size: var(--fs-caption); }
+    .cso-table td, .cso-th { padding: 8px 6px; }
+    .cso-name { min-width: 6.5rem; }
+    .cso-tile-tipo { display: none; }
+    .cso-code .cso-chip { font-size: 11px; padding: 2px 5px; }
+    .cso-pill { padding: 3px 6px; }
+  }
+</style>
+
+<div class="cso-page">
+<div class="cso" id="avance">
+  <header class="cso-head">
+    <img class="cso-logo" alt="ChinaLed" src="%%LOGO%%">
+    <div class="cso-titles">
+      <span class="cso-eyebrow">QA/QC · Contrato 42PS25 · Edelaysen / Grupo SAESA</span>
+      <h1 class="cso-title">Avance documental <b>PFV Cerro Sombrero</b></h1>
+    </div>
+    <div class="cso-switch" role="tablist" aria-label="Matriz">
+      <button type="button" role="tab" id="tab-procedimientos" aria-controls="vista-procedimientos" aria-selected="true">Procedimientos</button>
+      <button type="button" role="tab" id="tab-protocolos" aria-controls="vista-protocolos" aria-selected="false">Protocolos</button>
+    </div>
+  </header>
+
+  <div class="cso-view" id="vista-procedimientos" role="tabpanel" aria-labelledby="tab-procedimientos">
+  <section class="cso-card cso-summary" id="estado-ito" aria-label="Avance documental ITO" data-source="kpis">
+    <div class="cso-hero" id="aprobados-ito">
+      <div class="cso-hero-top">
+        <div class="cso-cardhead">
+          <h2>Procedimientos aprobados por ITO</h2>
+        </div>
+        <div class="cso-hero-row">
+          <span class="cso-big dash-skeleton" data-source="kpis" data-field="pct_aprobado" data-row="0">—</span>
+          <span class="cso-of"><b class="dash-skeleton" data-source="kpis" data-field="aprobados" data-row="0">—</b> de <b class="dash-skeleton" data-source="kpis" data-field="total" data-row="0">—</b> procedimientos</span>
+        </div>
+      </div>
+      <div class="cso-stack" id="cso-hero-stack" data-source="kpis" role="img" aria-label="Distribución por estado documental"></div>
+    </div>
+    <div class="cso-sum-pie">
+      <div class="cso-pie-svg dash-skeleton" id="cso-pie-svg"></div>
+    </div>
+    <div class="cso-sum-kpis">
+      <ul class="cso-pie-legend" id="cso-pie-legend" aria-label="Procedimientos por estado documental ITO">
+        <li class="cso-kpi-head" aria-hidden="true"><span></span><span>Estado</span><span>Cant.</span><span>%</span></li>
+        <li data-kpi="aprobados"></li>
+        <li data-kpi="enviados"></li>
+        <li data-kpi="desarrollo"></li>
+        <li data-kpi="rechazados"></li>
+        <li data-kpi="sin_emitir"></li>
+        <li data-kpi="total" class="cso-total"></li>
+      </ul>
+    </div>
+    <div class="cso-sum-disc" id="por-disciplina">
+      <div class="cso-cardhead">
+        <h3>Avance por disciplina</h3>
+        <p class="cso-note">Aprobados sobre total. Haz clic para filtrar la tabla.</p>
+      </div>
+      <div class="cso-bars dash-skeleton" id="cso-disc" data-source="por_disciplina"></div>
+    </div>
+    <div class="cso-tip" id="cso-tip" hidden></div>
+  </section>
+
+  <section class="cso-card" id="procedimientos">
+    <div class="cso-cardhead">
+      <h2>Procedimientos operacionales</h2>
+    </div>
+    <div class="cso-tools">
+      <input id="cso-q" type="search" placeholder="Buscar código o nombre" aria-label="Buscar procedimiento">
+      <select id="cso-f-disc" aria-label="Disciplina"></select>
+      <select id="cso-f-est" aria-label="Estado documental"></select>
+      <select id="cso-f-resp" aria-label="Responsable"></select>
+      <button class="cso-clear" id="cso-clear" type="button">Limpiar filtros</button>
+      <span class="cso-count" id="cso-count"></span>
+    </div>
+    <div class="cso-tablebox">
+      <table class="cso-table" id="cso-table" data-source="procedimientos" data-row-key="codigo">
+        <thead>
+          <tr>
+            <th data-field="codigo"><button class="cso-th" type="button" data-sort="codigo">Código</button></th>
+            <th data-field="nombre"><button class="cso-th" type="button" data-sort="nombre">Procedimiento</button></th>
+            <th data-field="disciplina" class="cso-col-hide"><button class="cso-th" type="button" data-sort="disciplina">Disciplina</button></th>
+            <th data-field="revision"><button class="cso-th" type="button" data-sort="revision">Rev.</button></th>
+            <th data-field="estado"><button class="cso-th" type="button" data-sort="estado">Estado</button></th>
+          </tr>
+        </thead>
+        <tbody id="cso-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="cso-view" id="vista-protocolos" role="tabpanel" aria-labelledby="tab-protocolos" hidden>
+    <section class="cso-card cso-summary cso-summary-pt" id="pt-estado-ito" aria-label="Protocolos aprobados por ITO" data-source="pt_kpis">
+      <div class="cso-hero">
+        <div class="cso-hero-top">
+          <div class="cso-cardhead">
+            <h2>Protocolos aprobados por ITO</h2>
+          </div>
+          <div class="cso-hero-row">
+            <span class="cso-big dash-skeleton" data-source="pt_kpis" data-field="pct_cantidad_aprobada" data-row="0">—</span>
+            <span class="cso-of"><b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_aprobados" data-row="0">—</b> de <b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_total" data-row="0">—</b> protocolos programados</span>
+          </div>
+        </div>
+        <div class="cso-stack" id="pt-hero-stack" data-source="pt_kpis" role="img" aria-label="Protocolos programados: aprobados, hechos sin aprobar y por ejecutar"></div>
+      </div>
+      <div class="cso-sum-pie">
+        <div class="cso-pie-svg dash-skeleton" id="pt-pie-svg"></div>
+      </div>
+      <div class="cso-sum-kpis">
+        <ul class="cso-pie-legend" id="pt-estados" aria-label="Protocolos programados por avance"></ul>
+      </div>
+      <div class="cso-sum-disc" id="pt-por-disciplina">
+        <div class="cso-cardhead">
+          <h3>Avance por disciplina</h3>
+          <p class="cso-note">Aprobados sobre programados. Haz clic para filtrar los protocolos.</p>
+        </div>
+        <div class="cso-bars dash-skeleton" id="pt-disc" data-source="pt_terreno_disciplina"></div>
+      </div>
+      <div class="cso-pt-grid-wrap" id="pt-por-protocolo">
+        <div class="cso-cardhead">
+          <h3>Por protocolo</h3>
+          <p class="cso-note">Encargado, estado del formato, hechos / programados y % aprobado de cada protocolo. Haz clic para verlo en la tabla.</p>
+        </div>
+        <div class="cso-pt-grid dash-skeleton" id="pt-tiles" data-source="pt_protocolos"></div>
+      </div>
+      <div class="cso-tip" id="pt-tip" hidden></div>
+    </section>
+
+    <section class="cso-card" id="pt-protocolos">
+      <div class="cso-cardhead">
+        <h2>Protocolos</h2>
+      </div>
+      <div class="cso-tools">
+        <input id="pt-q" type="search" placeholder="Buscar código o nombre" aria-label="Buscar protocolo">
+        <select id="pt-f-disc" aria-label="Disciplina"></select>
+        <select id="pt-f-form" aria-label="Estado"></select>
+        <select id="pt-f-enc" aria-label="Encargado"></select>
+        <button class="cso-clear" id="pt-clear" type="button">Limpiar filtros</button>
+        <span class="cso-count" id="pt-count"></span>
+      </div>
+      <div class="cso-tablebox">
+        <table class="cso-table" id="pt-table" data-source="pt_protocolos" data-row-key="codigo">
+          <thead>
+            <tr>
+              <th data-field="codigo"><button class="cso-th" type="button" data-sort="codigo">Código</button></th>
+              <th data-field="nombre"><button class="cso-th" type="button" data-sort="nombre">Protocolo</button></th>
+              <th data-field="disciplina" class="cso-col-hide"><button class="cso-th" type="button" data-sort="disciplina">Disciplina</button></th>
+              <th data-field="encargado" class="cso-col-hide"><button class="cso-th" type="button" data-sort="encargado">Encargado</button></th>
+              <th data-field="formato"><button class="cso-th" type="button" data-sort="formato">Estado</button></th>
+              <th data-field="cantidad_hechos" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_hechos">Ejecutados</button></th>
+              <th data-field="cantidad_total" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_total">Requeridos</button></th>
+              <th data-field="cantidad_aprobados" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_aprobados">Aprobados</button></th>
+            </tr>
+          </thead>
+          <tbody id="pt-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+</div>
+
+<script>
+  // Turns the .xlsx that Google Drive returns into one row per procedure.
+  dash.loader('matriz_proc', {
+    description: 'Abre el .xlsx devuelto por Google Drive, lee la pestaña "Matriz" y entrega una fila por columna G a AW con las filas 5 (responsable), 6 (disciplina), 7 (código y nombre), 8 (revisión vigente) y 9 (estado documental ITO), más el color de relleno de las celdas de las filas 5, 6 y 7.',
+    fn: async ({ answer }) => {
+      const SHEET = 'Matriz';
+      const FIRST_COL = 7;   // G
+      const LAST_COL = 49;   // AW
+      const MAX_ROW = 9;
+
+      let a = answer;
+      if (typeof a === 'string') {
+        try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 400)); }
+      }
+      if (!a || typeof a.content !== 'string') throw new Error('Google Drive no devolvió el contenido del archivo.');
+
+      /*%%XLSX_READER%%*/
+      const X = await readXlsx(a.content);
+      const { grid, cell, fill } = await X.sheet(SHEET, MAX_ROW);
+      const colName = X.colName;
+      const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
+
+      const rows = [];
+      let disciplina = '';
+      let colorDisciplina = '';
+      for (let c = FIRST_COL; c <= LAST_COL; c++) {
+        const header = clean(cell(c, 7));
+        if (!header) continue;
+        if (clean(cell(c, 6))) { disciplina = clean(cell(c, 6)); colorDisciplina = fill(c, 6); }
+        const sp = header.indexOf(' ');
+        rows.push({
+          columna: colName(c),
+          codigo: sp > 0 ? header.slice(0, sp) : header,
+          nombre: sp > 0 ? header.slice(sp + 1) : '',
+          disciplina,
+          responsable: clean(cell(c, 5)),
+          revision: clean(cell(c, 8)),
+          estado: clean(cell(c, 9)),
+          color_disciplina: colorDisciplina,
+          color_procedimiento: fill(c, 7),
+          color_responsable: fill(c, 5),
+        });
+      }
+      if (!rows.length) throw new Error('La pestaña "' + SHEET + '" no tiene procedimientos en la fila 7 (G a AW).');
+
+      const meta = [];
+      const ficha = clean(grid.D2);
+      const actualizacion = clean(grid.B6).split('|')[0].trim();
+      if (ficha) meta.push({ label: 'Ficha de la matriz', value: ficha });
+      if (actualizacion) meta.push({ label: 'Actualización', value: actualizacion });
+      if (a.title) meta.push({ label: 'Archivo', value: String(a.title) });
+      return {
+        data: rows,
+        columns: ['columna', 'codigo', 'nombre', 'disciplina', 'responsable', 'revision', 'estado', 'color_disciplina', 'color_procedimiento', 'color_responsable'],
+        meta,
+      };
+    },
+  });
+
+  dash.calc('procedimientos', {
+    inputs: ['matriz_proc'],
+    title: 'Procedimientos con estado',
+    description: 'Cada procedimiento con su estado ITO (A, D, E, R) y su revisión vigente traducidos a la leyenda de la matriz; una celda vacía o "-" cuenta como no creado.',
+    fn: (matriz_proc) => matriz_proc.map((p) => {
+      const ESTADOS = { A: 'Aprobado', E: 'Enviado a ITO', D: 'En desarrollo', R: 'Rechazado' };
+      const est = String(p.estado || '').trim().toUpperCase();
+      const rev = String(p.revision || '').trim().toUpperCase();
+      const resp = String(p.responsable || '').trim();
+      return {
+        codigo: p.codigo,
+        nombre: p.nombre,
+        disciplina: p.disciplina,
+        columna: p.columna,
+        responsable: resp || 'Sin asignar',
+        responsable_tipo: !resp ? 'Sin asignar' : /^crear nuevo$/i.test(resp) ? 'Por crear' : /^contratista/i.test(resp) ? 'Externo' : 'Interno',
+        revision: rev && rev !== '-' ? rev : '–',
+        revision_tipo: rev === '0' ? 'Aprobada' : /^\d+$/.test(rev) ? 'Con observaciones' : /^[A-Z]$/.test(rev) ? 'Devuelta a revisión' : 'No creado',
+        estado: ESTADOS[est] || 'No creado',
+        color_disciplina: p.color_disciplina,
+        color_procedimiento: p.color_procedimiento,
+        color_responsable: p.color_responsable,
+      };
+    }),
+  });
+
+  dash.calc('kpis', {
+    inputs: ['procedimientos'],
+    title: 'Resumen de estados',
+    description: 'Conteo de procedimientos por estado documental ITO; % aprobado = aprobados / total de procedimientos de la matriz.',
+    fn: (procedimientos) => {
+      const n = (e) => procedimientos.filter((p) => p.estado === e).length;
+      const total = procedimientos.length;
+      const aprobados = n('Aprobado');
+      return [{
+        total,
+        aprobados,
+        enviados: n('Enviado a ITO'),
+        desarrollo: n('En desarrollo'),
+        rechazados: n('Rechazado'),
+        sin_emitir: n('No creado'),
+        con_observaciones: procedimientos.filter((p) => p.revision_tipo === 'Con observaciones' || p.revision_tipo === 'Devuelta a revisión').length,
+        pct_aprobado: total ? aprobados / total : 0,
+      }];
+    },
+  });
+
+  dash.calc('por_disciplina', {
+    inputs: ['procedimientos'],
+    title: 'Estados por disciplina',
+    description: 'Procedimientos de cada disciplina (fila 6 de la matriz) contados por estado documental ITO, en el orden de la matriz, con el color de la disciplina.',
+    fn: (procedimientos) => {
+      const groups = new Map();
+      for (const p of procedimientos) {
+        const g = groups.get(p.disciplina) || { disciplina: p.disciplina, color: p.color_disciplina, total: 0, aprobado: 0, enviado: 0, desarrollo: 0, rechazado: 0, sin_emitir: 0 };
+        g.total += 1;
+        g[{ 'Aprobado': 'aprobado', 'Enviado a ITO': 'enviado', 'En desarrollo': 'desarrollo', 'Rechazado': 'rechazado' }[p.estado] || 'sin_emitir'] += 1;
+        groups.set(p.disciplina, g);
+      }
+      return [...groups.values()];
+    },
+  });
+
+  // ===== Matriz de protocolos =====
+  // One table with two kinds of rows: registro = "protocolo" (columns I.. of the matrix) and
+  // registro = "actividad" (rows 8.. of the matrix, with the state of each protocol that applies).
+  dash.loader('matriz_prot', {
+    description: 'Abre el .xlsx de la matriz de protocolos devuelto por Google Drive y lee la pestaña "Matriz": una fila por protocolo (fila 3 encargado, 4 estado del formato, 6 disciplina, 7 código y nombre, filas TOTALES / Protocolos hechos / Protocolos aprobados) y una fila por actividad (ítem, actividad, disciplina, frente, estatus, fecha de término, plano y el estado de cada protocolo que no es N/A), con los colores de relleno de la matriz.',
+    fn: async ({ answer }) => {
+      const SHEET = 'Matriz';
+      const FIRST_COL = 9;   // I
+      const MAX_ROW = 400;
+
+      let a = answer;
+      if (typeof a === 'string') {
+        try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 400)); }
+      }
+      if (!a || typeof a.content !== 'string') throw new Error('Google Drive no devolvió el contenido del archivo.');
+
+      /*%%XLSX_READER%%*/
+      const X = await readXlsx(a.content);
+      const { grid, cell, fill } = await X.sheet(SHEET, MAX_ROW);
+      const colName = X.colName;
+      const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
+      // Excel date serials (e.g. 46223) become dd-mm-aaaa; text dates stay as written.
+      const fecha = (v) => {
+        const s = clean(v);
+        if (!/^\d+(\.\d+)?$/.test(s) || Number(s) < 20000 || Number(s) > 80000) return s;
+        const d = new Date(Date.UTC(1899, 11, 30) + Math.round(Number(s)) * 86400000);
+        return String(d.getUTCDate()).padStart(2, '0') + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + d.getUTCFullYear();
+      };
+
+      const protCols = [];
+      for (let c = FIRST_COL; c < FIRST_COL + 300; c++) {
+        if (!/^PT-/.test(clean(cell(c, 7)))) break;
+        protCols.push(c);
+      }
+      if (!protCols.length) throw new Error('La pestaña "' + SHEET + '" no tiene protocolos (PT-…) en la fila 7 desde la columna I.');
+
+      const actRows = [];
+      const totalRows = {};
+      for (let r = 8; r <= MAX_ROW; r++) {
+        const label = clean(cell(3, r));
+        const item = clean(cell(2, r));
+        if (/^totales$/i.test(label)) totalRows.total = r;
+        else if (/^protocolos hechos$/i.test(label)) totalRows.hechos = r;
+        else if (/^protocolos aprobados$/i.test(label)) totalRows.aprobados = r;
+        else if (!totalRows.total && label && item !== '' && !isNaN(Number(item))) actRows.push(r);
+      }
+
+      const COLS = ['registro', 'columna', 'codigo', 'nombre', 'disciplina', 'encargado', 'estado_formato', 'tipo',
+        'cantidad_total', 'cantidad_hechos', 'cantidad_aprobados', 'item', 'actividad', 'frente', 'estatus',
+        'fecha_termino', 'plano', 'protocolos', 'color_disciplina', 'color_protocolo'];
+      const blank = Object.fromEntries(COLS.map((k) => [k, '']));
+      const rows = [];
+      const codeOf = {};
+      let disciplina = '';
+      let colorDisciplina = '';
+      for (const c of protCols) {
+        const header = clean(cell(c, 7));
+        if (clean(cell(c, 6))) { disciplina = clean(cell(c, 6)); colorDisciplina = fill(c, 6); }
+        const sp = header.indexOf(' ');
+        const codigo = sp > 0 ? header.slice(0, sp) : header;
+        codeOf[c] = codigo;
+        rows.push({
+          ...blank,
+          registro: 'protocolo',
+          columna: colName(c),
+          codigo,
+          nombre: sp > 0 ? header.slice(sp + 1) : '',
+          disciplina,
+          encargado: clean(cell(c, 3)),
+          estado_formato: clean(cell(c, 4)).toUpperCase(),
+          tipo: clean(cell(c, 5)),
+          cantidad_total: totalRows.total ? clean(cell(c, totalRows.total)) : '',
+          cantidad_hechos: totalRows.hechos ? clean(cell(c, totalRows.hechos)) : '',
+          cantidad_aprobados: totalRows.aprobados ? clean(cell(c, totalRows.aprobados)) : '',
+          color_disciplina: colorDisciplina,
+          color_protocolo: fill(c, 7),
+        });
+      }
+      for (const r of actRows) {
+        const estados = protCols
+          .map((c) => [codeOf[c], clean(cell(c, r)).toUpperCase()])
+          .filter(([, v]) => v !== 'N/A');
+        rows.push({
+          ...blank,
+          registro: 'actividad',
+          item: String(Number(clean(cell(2, r)))),
+          actividad: clean(cell(3, r)),
+          disciplina: clean(cell(4, r)),
+          frente: clean(cell(5, r)),
+          estatus: clean(cell(6, r)),
+          fecha_termino: fecha(cell(7, r)),
+          plano: clean(cell(8, r)),
+          protocolos: JSON.stringify(estados),
+          color_disciplina: fill(4, r),
+        });
+      }
+
+      const meta = [];
+      const ficha = clean(grid.D2);
+      const actualizacion = clean(grid.B6);
+      if (ficha) meta.push({ label: 'Ficha de la matriz', value: ficha });
+      if (actualizacion) meta.push({ label: 'Actualización', value: actualizacion });
+      if (a.title) meta.push({ label: 'Archivo', value: String(a.title) });
+      return { data: rows, columns: COLS, meta };
+    },
+  });
+
+  dash.calc('pt_protocolos', {
+    inputs: ['matriz_prot'],
+    title: 'Protocolos y su avance',
+    description: 'Cada protocolo con el estado de su formato (fila 4), su encargado (fila 3), en cuántas actividades aplica y con qué estado, y las cantidades a ejecutar, hechas y aprobadas en terreno (filas TOTALES, Protocolos hechos y Protocolos aprobados; "X" = protocolo sin cantidad de ejecuciones asignada; no se suma).',
+    fn: (matriz_prot) => {
+      const FORMATOS = { A: 'Aprobado ITO', C: 'Completado', E: 'Enviado a ITO', D: 'En desarrollo', R: 'Rechazado ITO' };
+      const actividades = matriz_prot.filter((r) => r.registro === 'actividad').map((r) => JSON.parse(r.protocolos || '[]'));
+      const num = (v) => (v === '' || isNaN(Number(v)) ? null : Number(v));
+      return matriz_prot.filter((r) => r.registro === 'protocolo').map((p) => {
+        const celdas = actividades.flat().filter(([codigo]) => codigo === p.codigo).map(([, v]) => v);
+        const n = (e) => celdas.filter((v) => v === e).length;
+        const total = num(p.cantidad_total);
+        return {
+          codigo: p.codigo,
+          nombre: p.nombre,
+          disciplina: p.disciplina,
+          color_disciplina: p.color_disciplina,
+          color_protocolo: p.color_protocolo,
+          encargado: p.encargado || 'Sin asignar',
+          formato: FORMATOS[p.estado_formato] || 'No creado',
+          sin_cantidad_asignada: /^x$/i.test(p.cantidad_total),
+          actividades: celdas.length,
+          aprobado: n('A'),
+          completado: n('C'),
+          enviado: n('E'),
+          desarrollo: n('D'),
+          rechazado: n('R'),
+          sin_estado: n(''),
+          pct_aprobado: celdas.length ? n('A') / celdas.length : 0,
+          tipo: p.tipo,
+          cantidad_total: total,
+          cantidad_hechos: num(p.cantidad_hechos),
+          cantidad_aprobados: num(p.cantidad_aprobados),
+          cantidad_definida: total != null,
+          por_aprobar: total != null ? Math.max(0, (num(p.cantidad_hechos) || 0) - (num(p.cantidad_aprobados) || 0)) : null,
+          por_ejecutar: total != null ? Math.max(0, total - (num(p.cantidad_hechos) || 0)) : null,
+          pct_terreno: total ? (num(p.cantidad_aprobados) || 0) / total : null,
+        };
+      });
+    },
+  });
+
+  dash.calc('pt_kpis', {
+    inputs: ['pt_protocolos'],
+    title: 'Resumen de protocolos en terreno',
+    description: 'Suma de las filas TOTALES, Protocolos hechos y Protocolos aprobados de los protocolos con cantidad definida ("X" se excluye); % aprobado = aprobados / programados; hechos sin aprobar = hechos − aprobados; por ejecutar = TOTALES − hechos.',
+    fn: (pt_protocolos) => {
+      const sum = (rows, k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
+      const definidos = pt_protocolos.filter((p) => p.cantidad_definida);
+      const total = sum(definidos, 'cantidad_total');
+      return [{
+        protocolos: pt_protocolos.length,
+        protocolos_sin_cantidad: pt_protocolos.length - definidos.length,
+        cantidad_total: total,
+        cantidad_hechos: sum(definidos, 'cantidad_hechos'),
+        cantidad_aprobados: sum(definidos, 'cantidad_aprobados'),
+        cantidad_por_aprobar: sum(definidos, 'por_aprobar'),
+        cantidad_por_ejecutar: sum(definidos, 'por_ejecutar'),
+        pct_hechos: total ? sum(definidos, 'cantidad_hechos') / total : 0,
+        pct_cantidad_aprobada: total ? sum(definidos, 'cantidad_aprobados') / total : 0,
+      }];
+    },
+  });
+
+  dash.calc('pt_terreno_disciplina', {
+    inputs: ['pt_protocolos'],
+    title: 'Protocolos en terreno por disciplina',
+    description: 'Por disciplina del protocolo (fila 6): suma de TOTALES, aprobados, hechos sin aprobar y por ejecutar de los protocolos con cantidad definida; cuenta aparte los que tienen "X".',
+    fn: (pt_protocolos) => {
+      const groups = new Map();
+      for (const p of pt_protocolos) {
+        const g = groups.get(p.disciplina) || { disciplina: p.disciplina, color: p.color_disciplina, protocolos: 0, sin_cantidad: 0, total: 0, aprobado: 0, por_aprobar: 0, por_ejecutar: 0 };
+        g.protocolos += 1;
+        if (!p.cantidad_definida) g.sin_cantidad += 1;
+        else {
+          g.total += p.cantidad_total;
+          g.aprobado += p.cantidad_aprobados || 0;
+          g.por_aprobar += p.por_aprobar;
+          g.por_ejecutar += p.por_ejecutar;
+        }
+        groups.set(p.disciplina, g);
+      }
+      return [...groups.values()];
+    },
+  });
+
+
+</script>
+
+<script>
+  // Status colors = the matrix's conditional formatting on row 9 (fill / text).
+  const STATES = [
+    { key: 'aprobado', kpi: 'aprobados', label: 'Aprobado', def: 'Aprobado por ITO (A)', bg: '#C6EFCE', fg: '#006100' },
+    { key: 'enviado', kpi: 'enviados', label: 'Enviado a ITO', def: 'Esperando respuesta (E)', bg: '#BDD7EE', fg: '#1F4E79' },
+    { key: 'desarrollo', kpi: 'desarrollo', label: 'En desarrollo', def: 'En elaboración (D)', bg: '#FCE4D6', fg: '#9C5700' },
+    { key: 'rechazado', kpi: 'rechazados', label: 'Rechazado', def: 'Devuelto por ITO (R)', bg: '#F4CCCC', fg: '#990000' },
+    { key: 'sin_emitir', kpi: 'sin_emitir', label: 'No creado', def: 'Sin estado ni revisión (–)', bg: '#E7E6E6', fg: '#666666' },
+  ];
+  const TOTAL = { kpi: 'total', label: 'Total', def: 'Procedimientos en la matriz', bg: '#FFFFFF', fg: '#1B2430' };
+  const STATE_BY_LABEL = Object.fromEntries(STATES.map((s) => [s.label, s]));
+  const edge = (s) => s.fg + '40';
+  const pct = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 0 });
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const view = { q: '', disciplina: '', estado: '', responsable: '', sort: 'columna', dir: 1 };
+
+  const settle = (node, status) => { if (status !== 'loading') node.classList.remove('dash-skeleton'); };
+  const failed = (node, status) => {
+    if (status !== 'error') return false;
+    node.replaceChildren(el('div', 'cso-fail', 'No se pudo cargar'));
+    return true;
+  };
+
+  // counts: {aprobado, enviado, desarrollo, rechazado, sin_emitir}
+  const stack = (node, counts, total) => {
+    node.replaceChildren(...STATES.filter((s) => counts[s.key] > 0).map((s) => {
+      const seg = el('span');
+      seg.style.width = (counts[s.key] / total) * 100 + '%';
+      seg.style.background = s.bg;
+      seg.style.setProperty('--edge', edge(s));
+      return seg;
+    }));
+  };
+  const chip = (text, bg, cls) => {
+    const c = el('span', 'cso-chip ' + (cls || ''), text);
+    if (bg) c.style.setProperty('--chip-bg', bg);
+    c.title = text;
+    return c;
+  };
+  const respChip = (name, tipo, bg) => tipo === 'Sin asignar'
+    ? el('span', 'cso-chip cso-chip-none', name)
+    : chip(name, bg || '#D9EAF7', 'cso-chip-resp');
+
+  // Header, hero, pie and tiles
+  function drawSummary() {
+    const k = dash.data('kpis');
+    document.querySelectorAll('[data-source="kpis"][data-field]').forEach((node) => {
+      settle(node, k.status);
+      const row = k.status === 'ok' ? k.data[0] : null;
+      const v = row ? row[node.dataset.field] : null;
+      node.textContent = v == null ? '—' : node.dataset.field === 'pct_aprobado' ? pct.format(v) : String(v);
+    });
+
+    if (k.status !== 'ok' || !k.data[0]) {
+      $('cso-hero-stack').replaceChildren();
+      drawPie(null, k.status);
+      return;
+    }
+    const r = k.data[0];
+    stack($('cso-hero-stack'), Object.fromEntries(STATES.map((s) => [s.key, r[s.kpi]])), r.total || 1);
+    drawPie(r, k.status);
+  }
+
+  function drawPie(r, status) {
+    const box = $('cso-pie-svg');
+    const tip = $('cso-tip');
+    settle(box, status);
+    tip.hidden = true;
+    drawKpiRows(r, status);
+    if (!r) {
+      if (status === 'error') box.replaceChildren(el('div', 'cso-fail', 'No se pudo cargar'));
+      else box.replaceChildren();
+      return;
+    }
+    const total = r.total || 1;
+    const items = STATES.map((s) => ({ ...s, n: r[s.kpi] || 0 }));
+    const size = 240;
+    const R = size / 2 - 3;
+    const svg = d3.create('svg').attr('viewBox', `0 0 ${size} ${size}`).attr('width', '100%')
+      .attr('role', 'img').attr('aria-label', 'Gráfico de torta por estado documental ITO');
+    const g = svg.append('g').attr('transform', `translate(${size / 2},${size / 2})`);
+    const arcs = d3.pie().sort(null).value((d) => d.n)(items.filter((d) => d.n > 0));
+    const arc = d3.arc().innerRadius(0).outerRadius(R);
+    const labelArc = d3.arc().innerRadius(R * 0.6).outerRadius(R * 0.6);
+    const pieBox = $('estado-ito');
+    g.selectAll('path').data(arcs).join('path')
+      .attr('d', arc)
+      .attr('fill', (d) => d.data.bg)
+      .attr('stroke', '#FFFFFF')
+      .attr('stroke-width', 2)
+      .on('pointerenter pointermove', (event, d) => {
+        tip.textContent = d.data.label + ': ' + d.data.n + ' (' + pct.format(d.data.n / total) + ')';
+        tip.hidden = false;
+        const [x, y] = d3.pointer(event, pieBox);
+        const left = Math.min(Math.max(4, x + 12), pieBox.clientWidth - tip.offsetWidth - 4);
+        tip.style.left = left + 'px';
+        tip.style.top = Math.max(4, y - tip.offsetHeight - 8) + 'px';
+      })
+      .on('pointerleave', () => { tip.hidden = true; });
+    g.append('circle').attr('r', R).attr('fill', 'none').attr('stroke', '#D5DBE3').attr('stroke-width', 1).attr('pointer-events', 'none');
+    g.selectAll('text').data(arcs.filter((d) => d.endAngle - d.startAngle > 0.32)).join('text')
+      .attr('transform', (d) => `translate(${labelArc.centroid(d)})`)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('pointer-events', 'none')
+      .attr('fill', (d) => d.data.fg)
+      .attr('font-size', 15)
+      .attr('font-weight', 600)
+      .text((d) => pct.format(d.data.n / total));
+    box.replaceChildren(svg.node());
+  }
+
+  // KPI rows beside the pie: one per status, then the total.
+  function drawKpiRows(r, status) {
+    [...STATES, TOTAL].forEach((s) => {
+      const li = document.querySelector(`#cso-pie-legend li[data-kpi="${s.kpi}"]`);
+      const sw = el('span', 'cso-sw');
+      if (s === TOTAL) sw.style.visibility = 'hidden';
+      sw.style.background = s.bg;
+      sw.style.setProperty('--edge', edge(s));
+      const text = el('span', 'cso-kpi-text');
+      text.append(el('span', 'cso-kpi-label', s.label), el('span', 'cso-kpi-def', s.def));
+      const num = el('span', 'cso-kpi-num', r ? String(r[s.kpi]) : '—');
+      num.dataset.source = 'kpis';
+      num.dataset.field = s.kpi;
+      num.dataset.row = '0';
+      if (status === 'loading') num.classList.add('dash-skeleton');
+      num.style.setProperty('--kpi-fg', s.fg);
+      const share = el('span', 'cso-pct', r && r.total ? pct.format(r[s.kpi] / r.total) : '');
+      li.replaceChildren(sw, text, num, share);
+    });
+  }
+
+  // Breakdown bars (disciplina / responsable)
+  function drawBars(id, source, keyField, filterKey) {
+    const box = $(id);
+    const d = dash.data(source);
+    settle(box, d.status);
+    if (failed(box, d.status)) return;
+    if (d.status !== 'ok') { box.replaceChildren(); return; }
+    box.replaceChildren(...d.data.map((g) => {
+      const b = el('button', 'cso-bar');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(view[filterKey] === g[keyField]));
+      const name = el('span', 'cso-bar-name');
+      if (keyField === 'disciplina') name.append(chip(g.disciplina, g.color || '#1F4E79', 'cso-chip-disc'));
+      else {
+        name.append(respChip(g.responsable, g.tipo, g.color));
+        if (g.tipo === 'Externo' || g.tipo === 'Por crear') {
+          const tag = el('span', 'cso-tag', g.tipo);
+          tag.dataset.k = g.tipo;
+          name.append(tag);
+        }
+      }
+      const bar = el('span', 'cso-stack');
+      stack(bar, g, g.total || 1);
+      const val = el('span', 'cso-bar-val');
+      val.append(el('b', null, String(g.aprobado)), document.createTextNode(' / ' + g.total));
+      b.append(name, bar, val);
+      b.setAttribute('aria-label', g[keyField] + ': ' + g.aprobado + ' de ' + g.total + ' aprobados');
+      b.addEventListener('click', () => {
+        view[filterKey] = view[filterKey] === g[keyField] ? '' : g[keyField];
+        drawAll();
+        $('procedimientos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return b;
+    }));
+  }
+
+  // Filterable table
+  const fillSelect = (sel, label, values, current) => {
+    sel.replaceChildren(new Option(label, ''), ...values.map((v) => new Option(v, v)));
+    sel.value = values.includes(current) ? current : '';
+  };
+  const rowMsg = (text) => { const tr = el('tr'); const td = el('td', 'cso-empty', text); td.colSpan = 5; tr.append(td); return tr; };
+
+  function drawTable() {
+    const d = dash.data('procedimientos');
+    const tbody = $('cso-tbody');
+    const all = d.status === 'ok' ? d.data : [];
+    const uniq = (f) => [...new Set(all.map((p) => p[f]))];
+    fillSelect($('cso-f-disc'), 'Todas las disciplinas', uniq('disciplina'), view.disciplina);
+    fillSelect($('cso-f-est'), 'Todos los estados', STATES.map((s) => s.label).filter((l) => all.some((p) => p.estado === l)), view.estado);
+    fillSelect($('cso-f-resp'), 'Todos los responsables', uniq('responsable').sort((a, b) => (a === 'Sin asignar') - (b === 'Sin asignar') || a.localeCompare(b, 'es')), view.responsable);
+
+    if (d.status === 'error') { tbody.replaceChildren(rowMsg('No se pudo cargar la matriz.')); $('cso-count').textContent = ''; return; }
+    if (d.status !== 'ok') { tbody.replaceChildren(rowMsg('Cargando matriz…')); $('cso-count').textContent = ''; return; }
+
+    const q = view.q.trim().toLowerCase();
+    const rows = all.filter((p) =>
+      (!view.disciplina || p.disciplina === view.disciplina) &&
+      (!view.estado || p.estado === view.estado) &&
+      (!view.responsable || p.responsable === view.responsable) &&
+      (!q || (p.codigo + ' ' + p.nombre).toLowerCase().includes(q)));
+    const order = Object.fromEntries(all.map((p, i) => [p.codigo, i]));
+    const stateOrder = Object.fromEntries(STATES.map((s, i) => [s.label, i]));
+    const keyOf = (p) => view.sort === 'columna' ? order[p.codigo] : view.sort === 'estado' ? stateOrder[p.estado] : String(p[view.sort]);
+    rows.sort((x, y) => {
+      const a = keyOf(x), b = keyOf(y);
+      const c = typeof a === 'number' ? a - b : a.localeCompare(b, 'es', { numeric: true });
+      return c * view.dir || order[x.codigo] - order[y.codigo];
+    });
+
+    document.querySelectorAll('#cso-table th').forEach((th) => {
+      const f = th.querySelector('.cso-th').dataset.sort;
+      if (f === view.sort) th.setAttribute('aria-sort', view.dir > 0 ? 'ascending' : 'descending');
+      else th.removeAttribute('aria-sort');
+    });
+    $('cso-count').textContent = rows.length === all.length ? all.length + ' procedimientos' : rows.length + ' de ' + all.length;
+
+    if (!rows.length) { tbody.replaceChildren(rowMsg('Ningún procedimiento coincide con los filtros.')); return; }
+    tbody.replaceChildren(...rows.map((p) => {
+      const tr = el('tr');
+      const code = el('td', 'cso-code');
+      code.append(chip(p.codigo, p.color_procedimiento || '#2F75B5'));
+      const name = el('td', 'cso-name', p.nombre);
+      const disc = el('td', 'cso-col-hide');
+      disc.append(chip(p.disciplina, p.color_disciplina || '#1F4E79', 'cso-chip-disc'));
+      const revTd = el('td');
+      const rev = el('span', 'cso-rev', p.revision);
+      rev.dataset.t = p.revision_tipo;
+      if (p.revision_tipo === 'Devuelta a revisión') rev.style.setProperty('--lv', String(Math.min(4, p.revision.charCodeAt(0) - 64)));
+      rev.title = p.revision_tipo;
+      rev.style.color = (STATE_BY_LABEL[p.estado] || STATE_BY_LABEL['No creado']).fg;
+      revTd.append(rev);
+      const estTd = el('td');
+      const s = STATE_BY_LABEL[p.estado] || STATE_BY_LABEL['No creado'];
+      const pill = el('span', 'cso-pill', p.estado);
+      pill.style.setProperty('--pc-bg', s.bg);
+      pill.style.setProperty('--pc-fg', s.fg);
+      estTd.append(pill);
+      tr.append(code, name, disc, revTd, estTd);
+      return tr;
+    }));
+  }
+
+  function drawAll() {
+    drawSummary();
+    drawBars('cso-disc', 'por_disciplina', 'disciplina', 'disciplina');
+    drawTable();
+  }
+
+  $('cso-q').addEventListener('input', (e) => { view.q = e.target.value; drawTable(); });
+  $('cso-f-disc').addEventListener('change', (e) => { view.disciplina = e.target.value; drawAll(); });
+  $('cso-f-est').addEventListener('change', (e) => { view.estado = e.target.value; drawAll(); });
+  $('cso-f-resp').addEventListener('change', (e) => { view.responsable = e.target.value; drawAll(); });
+  $('cso-clear').addEventListener('click', () => {
+    Object.assign(view, { q: '', disciplina: '', estado: '', responsable: '' });
+    $('cso-q').value = '';
+    drawAll();
+  });
+  document.querySelectorAll('.cso-th').forEach((btn) => btn.addEventListener('click', () => {
+    const f = btn.dataset.sort;
+    view.dir = view.sort === f ? -view.dir : 1;
+    view.sort = f;
+    drawTable();
+  }));
+
+  dash.onData(drawAll);
+</script>
+
+<script>
+  // ===== Vista Protocolos =====
+  // Colors = conditional formatting of the protocol matrix (fill / text).
+  const PT_STATES = [
+    { key: 'aprobado', label: 'Aprobado ITO', def: 'Aprobado por ITO (A)', code: 'A', bg: '#C6E0B4', fg: '#006100' },
+    { key: 'completado', label: 'Completado', def: 'Cerrado internamente (C)', code: 'C', bg: '#E2F0D9', fg: '#375623' },
+    { key: 'enviado', label: 'Enviado a ITO', def: 'Esperando revisión (E)', code: 'E', bg: '#DDEBF7', fg: '#1F4E79' },
+    { key: 'desarrollo', label: 'En desarrollo', def: 'En elaboración (D)', code: 'D', bg: '#FCE4D6', fg: '#9C5700' },
+    { key: 'rechazado', label: 'Rechazado ITO', def: 'Requiere corrección (R)', code: 'R', bg: '#F4CCCC', fg: '#9C0006' },
+    { key: 'sin_estado', label: 'No creado', def: 'Formato aún no creado', code: '', bg: '#F2F2F2', fg: '#7F7F7F' },
+  ];
+  const PT_BY_LABEL = Object.fromEntries(PT_STATES.map((s) => [s.label, s]));
+
+  const pctFmt = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 0 });
+  const intFmt = new Intl.NumberFormat('es-CL');
+  const $p = (id) => document.getElementById(id);
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const ptSettle = (node, status) => { if (status !== 'loading') node.classList.remove('dash-skeleton'); };
+  const ptFail = (node, status) => {
+    if (status !== 'error') return false;
+    node.replaceChildren(mk('div', 'cso-fail', 'No se pudo cargar'));
+    return true;
+  };
+  const edgeOf = (fg) => fg + '40';
+  const ptView = { q: '', disciplina: '', formato: '', encargado: '', sort: 'orden', dir: 1 };
+
+  // items: [{n, bg, fg}]
+  const ptStack = (node, items, total) => {
+    node.replaceChildren(...items.filter((s) => s.n > 0).map((s) => {
+      const seg = mk('span');
+      seg.style.width = (s.n / (total || 1)) * 100 + '%';
+      seg.style.background = s.bg;
+      seg.style.setProperty('--edge', edgeOf(s.fg));
+      return seg;
+    }));
+  };
+  const ptChip = (text, bg, fg) => {
+    const c = mk('span', 'cso-chip', text);
+    c.style.setProperty('--chip-bg', bg);
+    if (fg) c.style.setProperty('--chip-fg', fg);
+    c.title = text;
+    return c;
+  };
+  const ptPill = (text, s) => {
+    const p = mk('span', 'cso-pill', text);
+    p.style.setProperty('--pc-bg', s.bg);
+    p.style.setProperty('--pc-fg', s.fg);
+    return p;
+  };
+  const personChip = (name) => name === 'Sin asignar' ? mk('span', 'cso-chip cso-chip-none', name) : ptChip(name, '#D9EAF7', '#1F4E79');
+
+  // KPI list: header row, one row per item, optional total. items: [{field, label, def, bg, fg, ink?, onClick?, pressed?}]
+  function kpiList(ul, source, status, row, items, total) {
+    const head = mk('li', 'cso-kpi-head');
+    head.setAttribute('aria-hidden', 'true');
+    head.append(mk('span'), mk('span', null, 'Estado'), mk('span', null, 'Cant.'), mk('span', null, '%'));
+    const lis = items.map((s) => {
+      const li = mk('li');
+      const sw = mk('span', 'cso-sw');
+      sw.style.background = s.bg;
+      sw.style.setProperty('--edge', edgeOf(s.fg));
+      const text = mk('span', 'cso-kpi-text');
+      text.append(mk('span', 'cso-kpi-label', s.label), mk('span', 'cso-kpi-def', s.def));
+      const v = row ? row[s.field] : null;
+      const num = mk('span', 'cso-kpi-num', v == null ? '—' : intFmt.format(v));
+      num.dataset.source = source;
+      num.dataset.field = s.field;
+      num.dataset.row = '0';
+      if (status === 'loading') num.classList.add('dash-skeleton');
+      num.style.setProperty('--kpi-fg', s.ink || s.fg);
+      const share = mk('span', 'cso-pct', row && total && row[total.field] ? pctFmt.format(v / row[total.field]) : '');
+      li.append(sw, text, num, share);
+      if (s.onClick) {
+        li.className = 'cso-click';
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.setAttribute('aria-pressed', String(!!s.pressed));
+        li.addEventListener('click', s.onClick);
+        li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); s.onClick(); } });
+      }
+      return li;
+    });
+    if (total) {
+      const li = mk('li', 'cso-total');
+      const sw = mk('span', 'cso-sw');
+      sw.style.visibility = 'hidden';
+      const text = mk('span', 'cso-kpi-text');
+      text.append(mk('span', 'cso-kpi-label', total.label), mk('span', 'cso-kpi-def', total.def));
+      const v = row ? row[total.field] : null;
+      const num = mk('span', 'cso-kpi-num', v == null ? '—' : intFmt.format(v));
+      num.dataset.source = source;
+      num.dataset.field = total.field;
+      num.dataset.row = '0';
+      num.style.setProperty('--kpi-fg', '#1B2430');
+      li.append(sw, text, num, mk('span', 'cso-pct', row ? '100%' : ''));
+      lis.push(li);
+    }
+    ul.replaceChildren(head, ...lis);
+  }
+
+  function ptPie(box, tip, host, items, total, label) {
+    tip.hidden = true;
+    const size = 240;
+    const R = size / 2 - 3;
+    const svg = d3.create('svg').attr('viewBox', `0 0 ${size} ${size}`).attr('width', '100%').attr('role', 'img').attr('aria-label', label);
+    const g = svg.append('g').attr('transform', `translate(${size / 2},${size / 2})`);
+    const arcs = d3.pie().sort(null).value((d) => d.n)(items.filter((d) => d.n > 0));
+    const arc = d3.arc().innerRadius(0).outerRadius(R);
+    const labelArc = d3.arc().innerRadius(R * 0.62).outerRadius(R * 0.62);
+    g.selectAll('path').data(arcs).join('path')
+      .attr('d', arc)
+      .attr('fill', (d) => d.data.bg)
+      .attr('stroke', '#FFFFFF')
+      .attr('stroke-width', 2)
+      .on('pointerenter pointermove', (event, d) => {
+        tip.textContent = d.data.label + ': ' + intFmt.format(d.data.n) + ' (' + pctFmt.format(d.data.n / total) + ')';
+        tip.hidden = false;
+        const [x, y] = d3.pointer(event, host);
+        tip.style.left = Math.min(Math.max(4, x + 12), host.clientWidth - tip.offsetWidth - 4) + 'px';
+        tip.style.top = Math.max(4, y - tip.offsetHeight - 8) + 'px';
+      })
+      .on('pointerleave', () => { tip.hidden = true; });
+    g.append('circle').attr('r', R).attr('fill', 'none').attr('stroke', '#D5DBE3').attr('stroke-width', 1).attr('pointer-events', 'none');
+    g.selectAll('text').data(arcs.filter((d) => d.endAngle - d.startAngle > 0.32)).join('text')
+      .attr('transform', (d) => `translate(${labelArc.centroid(d)})`)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('pointer-events', 'none')
+      .attr('fill', (d) => d.data.fg)
+      .attr('font-size', 15)
+      .attr('font-weight', 600)
+      .text((d) => pctFmt.format(d.data.n / total));
+    box.replaceChildren(svg.node());
+  }
+
+  // Stacked bars that filter a table on click. nameOf(g) -> node.
+  function ptBars(boxId, source, key, items, nameOf, isPressed, onPick) {
+    const box = $p(boxId);
+    const d = dash.data(source);
+    ptSettle(box, d.status);
+    if (ptFail(box, d.status)) return;
+    if (d.status !== 'ok') { box.replaceChildren(); return; }
+    box.replaceChildren(...d.data.map((g) => {
+      const b = mk('button', 'cso-bar');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(isPressed(g[key])));
+      const name = mk('span', 'cso-bar-name');
+      name.append(nameOf(g));
+      const bar = mk('span', 'cso-stack');
+      ptStack(bar, items.map((s) => ({ ...s, n: g[s.key] })), g.total);
+      const val = mk('span', 'cso-bar-val');
+      val.append(mk('b', null, String(g.aprobado)), document.createTextNode(' / ' + g.total));
+      b.append(name, bar, val);
+      b.setAttribute('aria-label', g[key] + ': ' + g.aprobado + ' de ' + g.total + ' aprobados');
+      b.addEventListener('click', () => onPick(g[key]));
+      return b;
+    }));
+  }
+
+  // Field execution (rows 92–94 of the matrix): colors of the TOTALES / hechos / aprobados rows.
+  const TERRENO = [
+    { key: 'aprobado', kpi: 'cantidad_aprobados', label: 'Aprobados ITO', def: 'Fila «Protocolos aprobados»', bg: '#66FF33', fg: '#1B2430', ink: '#2E8B00' },
+    { key: 'por_aprobar', kpi: 'cantidad_por_aprobar', label: 'Hechos sin aprobar', def: 'Hechos − aprobados', bg: '#FFF4A1', fg: '#7F6000', ink: '#9C7A00' },
+    { key: 'por_ejecutar', kpi: 'cantidad_por_ejecutar', label: 'Por ejecutar', def: 'TOTALES − hechos', bg: '#D9D9D9', fg: '#404040', ink: '#7F7F7F' },
+  ];
+  // Row 95 color scale of the matrix (red → yellow → green).
+  const pctScale = d3.scaleLinear().domain([0, 0.5, 1]).range(['#FF5353', '#FFEA81', '#63BE7B']).clamp(true);
+
+  function drawPtSummary() {
+    const k = dash.data('pt_kpis');
+    const r = k.status === 'ok' ? k.data[0] : null;
+    document.querySelectorAll('#vista-protocolos .cso-hero [data-source="pt_kpis"][data-field]').forEach((node) => {
+      ptSettle(node, k.status);
+      const v = r ? r[node.dataset.field] : null;
+      node.textContent = v == null ? '—' : node.dataset.field.startsWith('pct') ? pctFmt.format(v) : intFmt.format(v);
+    });
+    const pieBox = $p('pt-pie-svg');
+    ptSettle(pieBox, k.status);
+    const partes = TERRENO.map((s) => ({ ...s, field: s.kpi, n: r ? r[s.kpi] : 0 }));
+    kpiList($p('pt-estados'), 'pt_kpis', k.status, r, partes, { field: 'cantidad_total', label: 'Programados', def: 'Suma de la fila TOTALES' });
+    if (!r) {
+      $p('pt-hero-stack').replaceChildren();
+      if (!ptFail(pieBox, k.status)) pieBox.replaceChildren();
+      return;
+    }
+    ptStack($p('pt-hero-stack'), partes, r.cantidad_total);
+    ptPie(pieBox, $p('pt-tip'), $p('pt-estado-ito'), partes, r.cantidad_total || 1, 'Gráfico de torta de protocolos programados por avance');
+  }
+
+  function drawPtTiles() {
+    const box = $p('pt-tiles');
+    const d = dash.data('pt_protocolos');
+    ptSettle(box, d.status);
+    if (ptFail(box, d.status)) return;
+    if (d.status !== 'ok') { box.replaceChildren(); return; }
+    box.replaceChildren(...d.data.map((p) => {
+      const t = mk('button', 'cso-tile');
+      t.type = 'button';
+      t.style.setProperty('--tile-c', p.color_disciplina || '#1F4E79');
+      t.title = p.codigo + ' ' + p.nombre;
+      const top = mk('div', 'cso-tile-top');
+      top.append(ptChip(p.codigo, p.color_protocolo || '#2F75B5', '#FFFFFF'));
+      if (p.tipo) top.append(mk('span', 'cso-tile-tipo', p.tipo));
+      const meta = mk('div', 'cso-tile-meta');
+      meta.append(personChip(p.encargado), ptPill(p.formato, PT_BY_LABEL[p.formato] || PT_BY_LABEL['No creado']));
+      const nums = mk('div', 'cso-tile-nums');
+      t.append(top, mk('div', 'cso-tile-name', p.nombre), meta, nums);
+      if (p.cantidad_definida) {
+        const hv = mk('span');
+        hv.append(mk('b', null, intFmt.format(p.cantidad_hechos ?? 0)), mk('small', null, ' / ' + intFmt.format(p.cantidad_total) + ' hechos'));
+        const pc = mk('span', 'cso-tile-pct', pctFmt.format(p.pct_terreno));
+        pc.style.setProperty('--pct-bg', pctScale(p.pct_terreno));
+        pc.title = intFmt.format(p.cantidad_aprobados ?? 0) + ' aprobados de ' + intFmt.format(p.cantidad_total);
+        nums.append(hv, pc);
+        const bar = mk('span', 'cso-stack');
+        ptStack(bar, TERRENO.map((s) => ({ ...s, n: s.key === 'aprobado' ? (p.cantidad_aprobados || 0) : p[s.key] })), p.cantidad_total);
+        t.append(bar);
+      } else {
+        nums.append(mk('span', 'cso-tile-x', 'Sin asignar'), mk('span', 'cso-muted', '–'));
+      }
+      t.addEventListener('click', () => {
+        $p('pt-q').value = p.codigo;
+        pickProtocolos({ q: p.codigo, disciplina: '', formato: '', encargado: '' });
+      });
+      return t;
+    }));
+  }
+
+  // ---- Tables ----
+  const fillSel = (sel, label, values, current) => {
+    sel.replaceChildren(new Option(label, ''), ...values.map((v) => new Option(v, v)));
+    sel.value = values.includes(current) ? current : '';
+  };
+  const msgRow = (text, span) => { const tr = mk('tr'); const td = mk('td', 'cso-empty', text); td.colSpan = span; tr.append(td); return tr; };
+  const sortRows = (rows, view, orderKey, rank) => {
+    const order = new Map(rows.map((p, i) => [p[orderKey], i]));
+    const keyOf = (p) => view.sort === 'orden' ? order.get(p[orderKey]) : rank && rank[view.sort] ? rank[view.sort](p) : p[view.sort];
+    return rows.slice().sort((x, y) => {
+      const a = keyOf(x), b = keyOf(y);
+      const c = typeof a === 'number' || typeof b === 'number' ? (a ?? -1) - (b ?? -1) : String(a ?? '').localeCompare(String(b ?? ''), 'es', { numeric: true });
+      return c * view.dir || order.get(x[orderKey]) - order.get(y[orderKey]);
+    });
+  };
+  const markSort = (tableId, view) => {
+    document.querySelectorAll('#' + tableId + ' th').forEach((th) => {
+      const f = th.querySelector('.cso-th').dataset.sort;
+      if (f === view.sort) th.setAttribute('aria-sort', view.dir > 0 ? 'ascending' : 'descending');
+      else th.removeAttribute('aria-sort');
+    });
+  };
+
+  function drawPtTable() {
+    const d = dash.data('pt_protocolos');
+    const tbody = $p('pt-tbody');
+    const all = d.status === 'ok' ? d.data : [];
+    const uniq = (f) => [...new Set(all.map((p) => p[f]))];
+    fillSel($p('pt-f-disc'), 'Todas las disciplinas', uniq('disciplina'), ptView.disciplina);
+    fillSel($p('pt-f-form'), 'Todos los estados', PT_STATES.map((s) => s.label).filter((l) => all.some((p) => p.formato === l)), ptView.formato);
+    fillSel($p('pt-f-enc'), 'Todos los encargados', uniq('encargado').sort((a, b) => (a === 'Sin asignar') - (b === 'Sin asignar') || a.localeCompare(b, 'es')), ptView.encargado);
+    if (d.status === 'error') { tbody.replaceChildren(msgRow('No se pudo cargar la matriz de protocolos.', 8)); $p('pt-count').textContent = ''; return; }
+    if (d.status !== 'ok') { tbody.replaceChildren(msgRow('Cargando matriz de protocolos…', 8)); $p('pt-count').textContent = ''; return; }
+    const q = ptView.q.trim().toLowerCase();
+    const filtered = all.filter((p) =>
+      (!ptView.disciplina || p.disciplina === ptView.disciplina) &&
+      (!ptView.formato || p.formato === ptView.formato) &&
+      (!ptView.encargado || p.encargado === ptView.encargado) &&
+      (!q || (p.codigo + ' ' + p.nombre).toLowerCase().includes(q)));
+    const formatoRank = Object.fromEntries(PT_STATES.map((s, i) => [s.label, i]));
+    const rows = sortRows(filtered, ptView, 'codigo', { formato: (p) => formatoRank[p.formato] });
+    markSort('pt-table', ptView);
+    $p('pt-count').textContent = rows.length === all.length ? all.length + ' protocolos' : rows.length + ' de ' + all.length;
+    if (!rows.length) { tbody.replaceChildren(msgRow('Ningún protocolo coincide con los filtros.', 8)); return; }
+    tbody.replaceChildren(...rows.map((p) => {
+      const tr = mk('tr');
+      const code = mk('td', 'cso-code');
+      code.append(ptChip(p.codigo, p.color_protocolo || '#2F75B5', '#FFFFFF'));
+      const disc = mk('td', 'cso-col-hide');
+      disc.append(ptChip(p.disciplina, p.color_disciplina || '#1F4E79', '#FFFFFF'));
+      const enc = mk('td', 'cso-col-hide');
+      enc.append(personChip(p.encargado));
+      const form = mk('td');
+      form.append(ptPill(p.formato, PT_BY_LABEL[p.formato] || PT_BY_LABEL['No creado']));
+      const qty = (v) => (v == null ? '–' : intFmt.format(v));
+      const ejecutados = mk('td', 'cso-num', p.cantidad_definida ? qty(p.cantidad_hechos ?? 0) : '–');
+      const requeridos = mk('td', 'cso-num');
+      if (p.cantidad_definida) requeridos.append(mk('b', null, qty(p.cantidad_total)));
+      else requeridos.append(mk('small', null, 'Sin asignar'));
+      const aprobados = mk('td', 'cso-num cso-aprob', p.cantidad_definida ? qty(p.cantidad_aprobados ?? 0) : '–');
+      tr.append(code, mk('td', 'cso-name', p.nombre), disc, enc, form, ejecutados, requeridos, aprobados);
+      return tr;
+    }));
+  }
+  function pickProtocolos(change) {
+    Object.assign(ptView, change);
+    drawPt();
+    $p('pt-protocolos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function drawPt() {
+    drawPtSummary();
+    ptBars('pt-disc', 'pt_terreno_disciplina', 'disciplina', TERRENO,
+      (g) => ptChip(g.disciplina, g.color || '#1F4E79', '#FFFFFF'),
+      (v) => ptView.disciplina === v,
+      (v) => pickProtocolos({ disciplina: ptView.disciplina === v ? '' : v }));
+    drawPtTiles();
+    drawPtTable();
+  }
+
+  $p('pt-q').addEventListener('input', (e) => { ptView.q = e.target.value; drawPtTable(); });
+  $p('pt-f-disc').addEventListener('change', (e) => { ptView.disciplina = e.target.value; drawPt(); });
+  $p('pt-f-form').addEventListener('change', (e) => { ptView.formato = e.target.value; drawPt(); });
+  $p('pt-f-enc').addEventListener('change', (e) => { ptView.encargado = e.target.value; drawPt(); });
+  $p('pt-clear').addEventListener('click', () => { Object.assign(ptView, { q: '', disciplina: '', formato: '', encargado: '' }); $p('pt-q').value = ''; drawPt(); });
+  for (const [tableId, view, redraw] of [['pt-table', ptView, () => drawPtTable()]]) {
+    document.querySelectorAll('#' + tableId + ' .cso-th').forEach((btn) => btn.addEventListener('click', () => {
+      const f = btn.dataset.sort;
+      view.dir = view.sort === f ? -view.dir : 1;
+      view.sort = f;
+      redraw();
+    }));
+  }
+
+  dash.onData(drawPt);
+
+  // ---- Switch between the two dashboards ----
+  const VIEWS = { procedimientos: $p('vista-procedimientos'), protocolos: $p('vista-protocolos') };
+  function showView(name) {
+    for (const [key, node] of Object.entries(VIEWS)) {
+      node.hidden = key !== name;
+      $p('tab-' + key).setAttribute('aria-selected', String(key === name));
+    }
+    dash.setLink(name);
+  }
+  $p('tab-procedimientos').addEventListener('click', () => showView('procedimientos'));
+  $p('tab-protocolos').addEventListener('click', () => showView('protocolos'));
+  const startView = location.hash.slice(1);
+  if (startView === 'protocolos') showView('protocolos');
+</script>
