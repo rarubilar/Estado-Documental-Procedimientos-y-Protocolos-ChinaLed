@@ -1,12 +1,13 @@
-# Rebuilds and publishes the dashboard on GitHub Pages.
-# Every 10 minutes it downloads the two Excel matrices from Google Drive (shared "anyone with the link")
-# and publishes only when they changed. A push to the dashboard code or a manual run always publishes.
+# Publishes the dashboard on GitHub Pages. The page reads the two Excel matrices live from Google Drive when opened;
+# this workflow refreshes the copy baked into the page (first paint and fallback). Every hour it downloads the matrices
+# (shared "anyone with the link") and publishes only when they changed. A push or a manual run always publishes.
 name: Actualizar dashboard
 
 on:
   schedule:
-    # Offset from :00, when GitHub's scheduler is busiest and drops or delays runs.
-    - cron: '7-59/10 * * * *'
+    # Hourly backup: the page reads the Excel live from Drive; this only refreshes its saved copy (first paint and
+    # fallback). Offset from :00, when GitHub's scheduler is busiest and drops or delays runs.
+    - cron: '7 * * * *'
   workflow_dispatch:
   push:
     branches: [main]

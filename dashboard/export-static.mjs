@@ -41,7 +41,8 @@ for (const [id, file] of [['matriz_proc', PROC], ['matriz_prot', PROT]]) {
 for (const [id, def] of Object.entries(calcs)) results[id] = def.fn(...def.inputs.map((i) => results[i]));
 if (!results.procedimientos?.length || !results.pt_protocolos?.length) throw new Error('Las matrices no entregaron filas: revisa los archivos');
 
-// 3) The page keeps its loader/calc script (its calls hit the shim's no-ops); the shim and tokens stand in for the runtime.
+// 3) The page keeps its loader/calc script; the shim and tokens stand in for the runtime. The shim keeps the
+// loader/calc definitions so the standalone page can rerun them in the browser on the live files (step 4).
 const title = STANDALONE ? 'Estado Documental Procedimientos y Protocolos - ChinaLed' : 'Avance QA/QC PFV CSO';
 const head = `<title>${title}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -49,11 +50,12 @@ const head = `<title>${title}</title>
 window.dash = {
   _data: ${JSON.stringify(results)},
   _meta: ${JSON.stringify(metas)},
-  loader() {}, calc() {}, refresh() {},
+  _loaders: {}, _calcs: {}, _subs: [],
+  loader(id, d) { this._loaders[id] = d; }, calc(id, d) { this._calcs[id] = d; }, refresh() {},
   setLink(name) { try { history.replaceState(null, '', '#' + name); } catch (e) {} },
   params() { return {}; }, setParams() {}, resetParams() {},
   data(id) { return { status: 'ok', data: this._data[id] || [], meta: this._meta[id] || [], refreshing: false }; },
-  onData(fn) { fn(); },
+  onData(fn) { this._subs.push(fn); fn(); },
 };
 </script>
 <style>
@@ -73,13 +75,63 @@ window.dash = {
   img { max-width: 100%; }
   .cso-static-meta { font-size: calc(var(--cds-font-size-body) * 1.15); color: #5F6B7A; margin-top: 4px; }
   .cso-static-meta b { color: #1B2430; font-weight: 600; }
+  .cso-live { color: #006100; font-size: .85em; margin-left: 6px; white-space: nowrap; }
+  .cso-saved { color: #9C5700; font-size: .85em; }
 </style>`;
+// 4) Standalone only: on open (and when the tab comes back after a minute) the page downloads both matrices
+// through the Drive API, reruns the loaders and calcs and redraws. Drive's plain download link refuses cross-site
+// browser requests, so it uses config.driveApiKey (read-only, limited to the Drive API and the GitHub Pages site).
+// The baked data stays as the first paint and as the fallback when Drive can't be read.
+const config = JSON.parse(readFileSync(join(here, 'config.json'), 'utf8'));
+const live = `
+  const SOURCES = ${JSON.stringify([['matriz_proc', config.procedimientos.fileId, config.procedimientos.fileName], ['matriz_prot', config.protocolos.fileId, config.protocolos.fileName]])};
+  const API = (fileId, q) => 'https://www.googleapis.com/drive/v3/files/' + fileId + '?' + q + '&key=' + ${JSON.stringify(config.driveApiKey.key)};
+  const download = async (fileId) => {
+    const r = await fetch(API(fileId, 'alt=media'), { cache: 'no-store' });
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    if (!r.ok || bytes[0] !== 0x50 || bytes[1] !== 0x4B) throw new Error('Drive no entregó el .xlsx ' + fileId + ' (' + r.status + ')');
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  };
+  const modified = async (fileId) => (await (await fetch(API(fileId, 'fields=modifiedTime'), { cache: 'no-store' })).json()).modifiedTime;
+  const fmt = (d) => new Intl.DateTimeFormat('es-CL', { timeZone: 'America/Punta_Arenas', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+    .format(d).replace(/-/g, '.').replace(',', '');
+  let lastLoad = 0;
+  const loadLive = async () => {
+    lastLoad = Date.now();
+    try {
+      const [files, times] = await Promise.all([
+        Promise.all(SOURCES.map(([, fileId]) => download(fileId))),
+        Promise.all(SOURCES.map(([, fileId]) => modified(fileId).catch(() => null))),
+      ]);
+      const saved = times.filter(Boolean).map((t) => new Date(t)).sort((a, b) => b - a)[0];
+      const data = {}, metas = {};
+      for (let i = 0; i < SOURCES.length; i++) {
+        const r = await dash._loaders[SOURCES[i][0]].fn({ answer: { content: files[i], title: SOURCES[i][2] } });
+        data[SOURCES[i][0]] = r.data;
+        metas[SOURCES[i][0]] = r.meta;
+      }
+      for (const [id, def] of Object.entries(dash._calcs)) data[id] = def.fn(...def.inputs.map((x) => data[x]));
+      if (!data.procedimientos?.length || !data.pt_protocolos?.length) throw new Error('Las matrices no entregaron filas');
+      dash._data = data;
+      dash._meta = metas;
+      dash._subs.forEach((fn) => fn());
+      meta.innerHTML = '<b>Estado documental al:</b> ' + (saved ? fmt(saved) : fmt(new Date())) + ' <span class="cso-live">● en vivo</span>';
+      meta.title = 'Fecha y hora del último cambio guardado en las matrices de Google Drive (hora de Magallanes).';
+    } catch (e) {
+      console.error(e);
+      meta.innerHTML = '<b>Estado documental al:</b> ' + ${JSON.stringify(FECHA)} + ' <span class="cso-saved">(copia guardada: no se pudo leer Google Drive)</span>';
+    }
+  };
+  loadLive();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastLoad > 60000) loadLive(); });`;
 const finish = `
 <script>
   const meta = document.createElement('div');
   meta.className = 'cso-static-meta';
   meta.innerHTML = '<b>Estado documental al:</b> ' + ${JSON.stringify(FECHA)};
-  document.querySelector('.cso-titles').append(meta);
+  document.querySelector('.cso-titles').append(meta);${STANDALONE ? live : ''}
 </script>`;
 const html = STANDALONE
   ? '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +

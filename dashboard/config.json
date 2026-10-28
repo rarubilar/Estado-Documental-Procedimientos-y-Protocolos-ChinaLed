@@ -16,5 +16,9 @@
   },
   "shareArtifactUrl": "https://claude.ai/artifact/SkLcgeXmXGLxZNf8EjX6mh",
   "staticShareUrl": "https://claude.ai/artifact/WEXaJnJVnK5ejQ1i7xWp1Q",
-  "staticShareCodeUrl": "https://claude.ai/code/artifact/ecbc883e-5ae3-44fb-abd0-b3537391dfab"
+  "staticShareCodeUrl": "https://claude.ai/code/artifact/ecbc883e-5ae3-44fb-abd0-b3537391dfab",
+  "driveApiKey": {
+    "key": "AIzaSyBTYml6WaIJUM2gvobhMyIwTybi2Bbp8mw",
+    "nota": "Llave pública de solo lectura (proyecto Google Cloud dashboard-cso-chinaled): solo Drive API y solo desde rarubilar.github.io. La usa la versión pública para leer los Excel en vivo."
+  }
 }
