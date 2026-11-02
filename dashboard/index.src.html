@@ -90,7 +90,11 @@
   .cso-tile-name { font-size: var(--fs-caption); line-height: 1.3; min-height: 2.6em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .cso-tile-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .cso-tile-meta .cso-chip, .cso-tile-meta .cso-pill { font-size: calc(10.5px * 1.15); padding: 2px 6px; }
+  .cso-tile .cso-chip-estado { align-self: flex-start; white-space: normal; font-size: calc(10.5px * 1.15); font-weight: 500; padding: 2px 6px; }
+  td .cso-chip-estado { max-width: 11em; font-weight: 500; }
+  #pt-table .cso-name { min-width: 12rem; }
   .cso-tile-nums { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+  .cso-tile-sub { font-size: calc(10.5px * 1.15); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
   .cso-tile-nums b { font-size: 1.15rem; font-weight: 600; }
   .cso-tile-nums small { color: var(--color-fg-muted); }
   .cso-tile-pct { font-weight: 600; padding: 2px 7px; border-radius: 4px; background: var(--pct-bg); color: #1B2430; }
@@ -356,28 +360,28 @@
           </div>
           <div class="cso-hero-row">
             <span class="cso-big dash-skeleton" data-source="pt_kpis" data-field="pct_cantidad_aprobada" data-row="0">—</span>
-            <span class="cso-of"><b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_aprobados" data-row="0">—</b> de <b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_total" data-row="0">—</b> protocolos programados</span>
+            <span class="cso-of"><b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_aprobados" data-row="0">—</b> de <b class="dash-skeleton" data-source="pt_kpis" data-field="cantidad_total" data-row="0">—</b> protocolos solicitados</span>
           </div>
         </div>
-        <div class="cso-stack" id="pt-hero-stack" data-source="pt_kpis" role="img" aria-label="Protocolos programados: aprobados, hechos sin aprobar y por ejecutar"></div>
+        <div class="cso-stack" id="pt-hero-stack" data-source="pt_kpis" role="img" aria-label="Protocolos solicitados: aprobados, entregados a ITO sin aprobar, realizados sin entregar y por ejecutar"></div>
       </div>
       <div class="cso-sum-pie">
         <div class="cso-pie-svg dash-skeleton" id="pt-pie-svg"></div>
       </div>
       <div class="cso-sum-kpis">
-        <ul class="cso-pie-legend" id="pt-estados" aria-label="Protocolos programados por avance"></ul>
+        <ul class="cso-pie-legend" id="pt-estados" aria-label="Protocolos solicitados por avance"></ul>
       </div>
       <div class="cso-sum-disc" id="pt-por-disciplina">
         <div class="cso-cardhead">
           <h3>Avance por disciplina</h3>
-          <p class="cso-note">Aprobados sobre programados. Haz clic para filtrar los protocolos.</p>
+          <p class="cso-note">Aprobados sobre solicitados. Haz clic para filtrar los protocolos.</p>
         </div>
         <div class="cso-bars dash-skeleton" id="pt-disc" data-source="pt_terreno_disciplina"></div>
       </div>
       <div class="cso-pt-grid-wrap" id="pt-por-protocolo">
         <div class="cso-cardhead">
           <h3>Por protocolo</h3>
-          <p class="cso-note">Encargado, estado del formato, hechos / programados y % aprobado de cada protocolo. Haz clic para verlo en la tabla.</p>
+          <p class="cso-note">Encargado, estado del formato, estado del protocolo, realizados / solicitados, entregados a ITO y % aprobado de cada protocolo. Haz clic para verlo en la tabla.</p>
         </div>
         <div class="cso-pt-grid dash-skeleton" id="pt-tiles" data-source="pt_protocolos"></div>
       </div>
@@ -405,8 +409,10 @@
               <th data-field="disciplina" class="cso-col-hide"><button class="cso-th" type="button" data-sort="disciplina">Disciplina</button></th>
               <th data-field="encargado" class="cso-col-hide"><button class="cso-th" type="button" data-sort="encargado">Encargado</button></th>
               <th data-field="formato"><button class="cso-th" type="button" data-sort="formato">Estado</button></th>
-              <th data-field="cantidad_hechos" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_hechos">Ejecutados</button></th>
-              <th data-field="cantidad_total" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_total">Requeridos</button></th>
+              <th data-field="estado_protocolo" class="cso-col-hide"><button class="cso-th" type="button" data-sort="estado_protocolo">Estado protocolo</button></th>
+              <th data-field="cantidad_total" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_total">Solicitados</button></th>
+              <th data-field="cantidad_hechos" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_hechos">Realizados</button></th>
+              <th data-field="cantidad_entregados" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_entregados">Entregados</button></th>
               <th data-field="cantidad_aprobados" class="cso-th-num"><button class="cso-th" type="button" data-sort="cantidad_aprobados">Aprobados</button></th>
             </tr>
           </thead>
@@ -545,7 +551,7 @@
   // One table with two kinds of rows: registro = "protocolo" (columns I.. of the matrix) and
   // registro = "actividad" (rows 8.. of the matrix, with the state of each protocol that applies).
   dash.loader('matriz_prot', {
-    description: 'Abre el .xlsx de la matriz de protocolos devuelto por Google Drive y lee la pestaña "Matriz": una fila por protocolo (fila 3 encargado, 4 estado del formato, 6 disciplina, 7 código y nombre, filas TOTALES / Protocolos hechos / Protocolos aprobados) y una fila por actividad (ítem, actividad, disciplina, frente, estatus, fecha de término, plano y el estado de cada protocolo que no es N/A), con los colores de relleno de la matriz.',
+    description: 'Abre el .xlsx de la matriz de protocolos devuelto por Google Drive y lee la pestaña "Matriz": una fila por protocolo (fila 3 encargado, 4 estado del formato, 6 disciplina, 7 código y nombre, filas de cierre Protocolos solicitados/por solicitar (antes TOTALES) / realizados (antes hechos) / entregados a ITO / aprobados y fila Estado protocolos) y una fila por actividad (ítem, actividad, disciplina, frente, estatus, fecha de término, plano y el estado de cada protocolo que no es N/A), con los colores de relleno de la matriz.',
     fn: async ({ answer }) => {
       const SHEET = 'Matriz';
       const FIRST_COL = 9;   // I
@@ -582,14 +588,18 @@
       for (let r = 8; r <= MAX_ROW; r++) {
         const label = clean(cell(3, r));
         const item = clean(cell(2, r));
-        if (/^totales$/i.test(label)) totalRows.total = r;
-        else if (/^protocolos hechos$/i.test(label)) totalRows.hechos = r;
+        // Closing rows, matched by their column C label (v7 names in parentheses): solicitados (TOTALES),
+        // realizados (hechos), entregados a ITO (new in v8), aprobados; "Estado protocolos" is labelled in column H.
+        if (/^(totales|protocolos solicitados)/i.test(label)) totalRows.total = r;
+        else if (/^protocolos (hechos|realizados)$/i.test(label)) totalRows.hechos = r;
+        else if (/^protocolos entregados/i.test(label)) totalRows.entregados = r;
         else if (/^protocolos aprobados$/i.test(label)) totalRows.aprobados = r;
+        else if (totalRows.total && /^estado protocolos$/i.test(clean(cell(8, r)))) totalRows.estado = r;
         else if (!totalRows.total && label && item !== '' && !isNaN(Number(item))) actRows.push(r);
       }
 
       const COLS = ['registro', 'columna', 'codigo', 'nombre', 'disciplina', 'encargado', 'estado_formato', 'tipo',
-        'cantidad_total', 'cantidad_hechos', 'cantidad_aprobados', 'item', 'actividad', 'frente', 'estatus',
+        'cantidad_total', 'cantidad_hechos', 'cantidad_entregados', 'cantidad_aprobados', 'estado_protocolo', 'color_estado', 'item', 'actividad', 'frente', 'estatus',
         'fecha_termino', 'plano', 'protocolos', 'color_disciplina', 'color_protocolo'];
       const blank = Object.fromEntries(COLS.map((k) => [k, '']));
       const rows = [];
@@ -614,7 +624,10 @@
           tipo: clean(cell(c, 5)),
           cantidad_total: totalRows.total ? clean(cell(c, totalRows.total)) : '',
           cantidad_hechos: totalRows.hechos ? clean(cell(c, totalRows.hechos)) : '',
+          cantidad_entregados: totalRows.entregados ? clean(cell(c, totalRows.entregados)) : '',
           cantidad_aprobados: totalRows.aprobados ? clean(cell(c, totalRows.aprobados)) : '',
+          estado_protocolo: totalRows.estado ? clean(cell(c, totalRows.estado)) : '',
+          color_estado: totalRows.estado ? fill(c, totalRows.estado) : '',
           color_disciplina: colorDisciplina,
           color_protocolo: fill(c, 7),
         });
@@ -651,7 +664,7 @@
   dash.calc('pt_protocolos', {
     inputs: ['matriz_prot'],
     title: 'Protocolos y su avance',
-    description: 'Cada protocolo con el estado de su formato (fila 4), su encargado (fila 3), en cuántas actividades aplica y con qué estado, y las cantidades a ejecutar, hechas y aprobadas en terreno (filas TOTALES, Protocolos hechos y Protocolos aprobados; "X" = protocolo sin cantidad de ejecuciones asignada; no se suma).',
+    description: 'Cada protocolo con el estado de su formato (fila 4), su encargado (fila 3), en cuántas actividades aplica y con qué estado, las cantidades solicitadas, realizadas, entregadas a ITO y aprobadas en terreno (filas de cierre; "X" = protocolo sin cantidad de ejecuciones asignada; no se suma) y su estado (fila Estado protocolos). Tramos: aprobados · entregados sin aprobar = entregados − aprobados · realizados sin entregar = realizados − máx(entregados, aprobados) · por ejecutar = solicitados − realizados.',
     fn: (matriz_prot) => {
       const FORMATOS = { A: 'Aprobado ITO', C: 'Completado', E: 'Enviado a ITO', D: 'En desarrollo', R: 'Rechazado ITO' };
       const actividades = matriz_prot.filter((r) => r.registro === 'actividad').map((r) => JSON.parse(r.protocolos || '[]'));
@@ -660,6 +673,9 @@
         const celdas = actividades.flat().filter(([codigo]) => codigo === p.codigo).map(([, v]) => v);
         const n = (e) => celdas.filter((v) => v === e).length;
         const total = num(p.cantidad_total);
+        const hechos = num(p.cantidad_hechos) || 0;
+        const entregados = num(p.cantidad_entregados) || 0;
+        const aprobados = num(p.cantidad_aprobados) || 0;
         return {
           codigo: p.codigo,
           nombre: p.nombre,
@@ -680,11 +696,15 @@
           tipo: p.tipo,
           cantidad_total: total,
           cantidad_hechos: num(p.cantidad_hechos),
+          cantidad_entregados: num(p.cantidad_entregados),
           cantidad_aprobados: num(p.cantidad_aprobados),
           cantidad_definida: total != null,
-          por_aprobar: total != null ? Math.max(0, (num(p.cantidad_hechos) || 0) - (num(p.cantidad_aprobados) || 0)) : null,
-          por_ejecutar: total != null ? Math.max(0, total - (num(p.cantidad_hechos) || 0)) : null,
-          pct_terreno: total ? (num(p.cantidad_aprobados) || 0) / total : null,
+          en_revision: total != null ? Math.max(0, entregados - aprobados) : null,
+          por_entregar: total != null ? Math.max(0, hechos - Math.max(entregados, aprobados)) : null,
+          por_ejecutar: total != null ? Math.max(0, total - hechos) : null,
+          pct_terreno: total ? aprobados / total : null,
+          estado_protocolo: /^n\/a$/i.test(p.estado_protocolo) ? '' : p.estado_protocolo,
+          color_estado: p.color_estado,
         };
       });
     },
@@ -693,7 +713,7 @@
   dash.calc('pt_kpis', {
     inputs: ['pt_protocolos'],
     title: 'Resumen de protocolos en terreno',
-    description: 'Suma de las filas TOTALES, Protocolos hechos y Protocolos aprobados de los protocolos con cantidad definida ("X" se excluye); % aprobado = aprobados / programados; hechos sin aprobar = hechos − aprobados; por ejecutar = TOTALES − hechos.',
+    description: 'Suma de las filas de cierre (solicitados, realizados, entregados a ITO, aprobados) de los protocolos con cantidad definida ("X" se excluye); % aprobado = aprobados / solicitados; los tramos son los de pt_protocolos.',
     fn: (pt_protocolos) => {
       const sum = (rows, k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
       const definidos = pt_protocolos.filter((p) => p.cantidad_definida);
@@ -703,8 +723,10 @@
         protocolos_sin_cantidad: pt_protocolos.length - definidos.length,
         cantidad_total: total,
         cantidad_hechos: sum(definidos, 'cantidad_hechos'),
+        cantidad_entregados: sum(definidos, 'cantidad_entregados'),
         cantidad_aprobados: sum(definidos, 'cantidad_aprobados'),
-        cantidad_por_aprobar: sum(definidos, 'por_aprobar'),
+        cantidad_en_revision: sum(definidos, 'en_revision'),
+        cantidad_por_entregar: sum(definidos, 'por_entregar'),
         cantidad_por_ejecutar: sum(definidos, 'por_ejecutar'),
         pct_hechos: total ? sum(definidos, 'cantidad_hechos') / total : 0,
         pct_cantidad_aprobada: total ? sum(definidos, 'cantidad_aprobados') / total : 0,
@@ -715,17 +737,18 @@
   dash.calc('pt_terreno_disciplina', {
     inputs: ['pt_protocolos'],
     title: 'Protocolos en terreno por disciplina',
-    description: 'Por disciplina del protocolo (fila 6): suma de TOTALES, aprobados, hechos sin aprobar y por ejecutar de los protocolos con cantidad definida; cuenta aparte los que tienen "X".',
+    description: 'Por disciplina del protocolo (fila 6): suma de solicitados, aprobados, entregados sin aprobar, realizados sin entregar y por ejecutar de los protocolos con cantidad definida; cuenta aparte los que tienen "X".',
     fn: (pt_protocolos) => {
       const groups = new Map();
       for (const p of pt_protocolos) {
-        const g = groups.get(p.disciplina) || { disciplina: p.disciplina, color: p.color_disciplina, protocolos: 0, sin_cantidad: 0, total: 0, aprobado: 0, por_aprobar: 0, por_ejecutar: 0 };
+        const g = groups.get(p.disciplina) || { disciplina: p.disciplina, color: p.color_disciplina, protocolos: 0, sin_cantidad: 0, total: 0, aprobado: 0, en_revision: 0, por_entregar: 0, por_ejecutar: 0 };
         g.protocolos += 1;
         if (!p.cantidad_definida) g.sin_cantidad += 1;
         else {
           g.total += p.cantidad_total;
           g.aprobado += p.cantidad_aprobados || 0;
-          g.por_aprobar += p.por_aprobar;
+          g.en_revision += p.en_revision;
+          g.por_entregar += p.por_entregar;
           g.por_ejecutar += p.por_ejecutar;
         }
         groups.set(p.disciplina, g);
@@ -1158,13 +1181,26 @@
     }));
   }
 
-  // Field execution (rows 92–94 of the matrix): colors of the TOTALES / hechos / aprobados rows.
+  // Field execution (closing rows 92–95 of the matrix): colors of the realizados / entregados / aprobados rows.
   const TERRENO = [
     { key: 'aprobado', kpi: 'cantidad_aprobados', label: 'Aprobados ITO', def: 'Fila «Protocolos aprobados»', bg: '#C6EFCE', fg: '#006100', ink: '#006100' },
-    { key: 'por_aprobar', kpi: 'cantidad_por_aprobar', label: 'Hechos sin aprobar', def: 'Hechos − aprobados', bg: '#FFF4A1', fg: '#7F6000', ink: '#9C7A00' },
-    { key: 'por_ejecutar', kpi: 'cantidad_por_ejecutar', label: 'Por ejecutar', def: 'TOTALES − hechos', bg: '#D9D9D9', fg: '#404040', ink: '#7F7F7F' },
+    { key: 'en_revision', kpi: 'cantidad_en_revision', label: 'Entregados a ITO sin aprobar', def: 'Entregados a ITO − aprobados', bg: '#8DB3E2', fg: '#1F4E79', ink: '#1F4E79' },
+    { key: 'por_entregar', kpi: 'cantidad_por_entregar', label: 'Realizados sin entregar', def: 'Realizados − entregados / aprobados', bg: '#FFF4A1', fg: '#7F6000', ink: '#9C7A00' },
+    { key: 'por_ejecutar', kpi: 'cantidad_por_ejecutar', label: 'Por ejecutar', def: 'Solicitados − realizados', bg: '#D9D9D9', fg: '#404040', ink: '#7F7F7F' },
   ];
-  // Row 95 color scale of the matrix (red → yellow → green).
+  // Conditional formatting of the "Estado protocolos" row; other texts keep the cell's own fill.
+  const ESTADO_PT = [
+    { re: /revisi[oó]n ito/i, bg: '#B6DDE8', fg: '#1F4E79' },
+    { re: /por completar/i, bg: '#FFFF99', fg: '#7F6000' },
+    { re: /no existe protocolo/i, bg: '#FF3737', fg: '#FFFFFF' },
+  ];
+  const estadoChip = (p) => {
+    const rule = ESTADO_PT.find((s) => s.re.test(p.estado_protocolo));
+    const c = ptChip(p.estado_protocolo, rule ? rule.bg : p.color_estado || '#F2F2F2', rule ? rule.fg : '#1B2430');
+    c.classList.add('cso-chip-estado');
+    return c;
+  };
+  // Row 96 color scale of the matrix (red → yellow → green).
   const pctScale = d3.scaleLinear().domain([0, 0.5, 1]).range(['#FF5353', '#FFEA81', '#63BE7B']).clamp(true);
 
   function drawPtSummary() {
@@ -1178,14 +1214,14 @@
     const pieBox = $p('pt-pie-svg');
     ptSettle(pieBox, k.status);
     const partes = TERRENO.map((s) => ({ ...s, field: s.kpi, n: r ? r[s.kpi] : 0 }));
-    kpiList($p('pt-estados'), 'pt_kpis', k.status, r, partes, { field: 'cantidad_total', label: 'Programados', def: 'Suma de la fila TOTALES' });
+    kpiList($p('pt-estados'), 'pt_kpis', k.status, r, partes, { field: 'cantidad_total', label: 'Solicitados', def: 'Fila «Protocolos solicitados/por solicitar»' });
     if (!r) {
       $p('pt-hero-stack').replaceChildren();
       if (!ptFail(pieBox, k.status)) pieBox.replaceChildren();
       return;
     }
     ptStack($p('pt-hero-stack'), partes, r.cantidad_total);
-    ptPie(pieBox, $p('pt-tip'), $p('pt-estado-ito'), partes, r.cantidad_total || 1, 'Gráfico de torta de protocolos programados por avance');
+    ptPie(pieBox, $p('pt-tip'), $p('pt-estado-ito'), partes, r.cantidad_total || 1, 'Gráfico de torta de protocolos solicitados por avance');
   }
 
   function drawPtTiles() {
@@ -1205,17 +1241,19 @@
       const meta = mk('div', 'cso-tile-meta');
       meta.append(personChip(p.encargado), ptPill(p.formato, PT_BY_LABEL[p.formato] || PT_BY_LABEL['No creado']));
       const nums = mk('div', 'cso-tile-nums');
-      t.append(top, mk('div', 'cso-tile-name', p.nombre), meta, nums);
+      t.append(top, mk('div', 'cso-tile-name', p.nombre), meta);
+      if (p.estado_protocolo) t.append(estadoChip(p));
+      t.append(nums);
       if (p.cantidad_definida) {
         const hv = mk('span');
-        hv.append(mk('b', null, intFmt.format(p.cantidad_hechos ?? 0)), mk('small', null, ' / ' + intFmt.format(p.cantidad_total) + ' hechos'));
+        hv.append(mk('b', null, intFmt.format(p.cantidad_hechos ?? 0)), mk('small', null, ' / ' + intFmt.format(p.cantidad_total) + ' realizados'));
         const pc = mk('span', 'cso-tile-pct', pctFmt.format(p.pct_terreno));
         pc.style.setProperty('--pct-bg', pctScale(p.pct_terreno));
         pc.title = intFmt.format(p.cantidad_aprobados ?? 0) + ' aprobados de ' + intFmt.format(p.cantidad_total);
         nums.append(hv, pc);
         const bar = mk('span', 'cso-stack');
         ptStack(bar, TERRENO.map((s) => ({ ...s, n: s.key === 'aprobado' ? (p.cantidad_aprobados || 0) : p[s.key] })), p.cantidad_total);
-        t.append(bar);
+        t.append(mk('div', 'cso-tile-sub', 'Entregados a ITO: ' + intFmt.format(p.cantidad_entregados ?? 0)), bar);
       } else {
         nums.append(mk('span', 'cso-tile-x', 'Sin asignar'), mk('span', 'cso-muted', '–'));
       }
@@ -1258,8 +1296,8 @@
     fillSel($p('pt-f-disc'), 'Todas las disciplinas', uniq('disciplina'), ptView.disciplina);
     fillSel($p('pt-f-form'), 'Todos los estados', PT_STATES.map((s) => s.label).filter((l) => all.some((p) => p.formato === l)), ptView.formato);
     fillSel($p('pt-f-enc'), 'Todos los encargados', uniq('encargado').sort((a, b) => (a === 'Sin asignar') - (b === 'Sin asignar') || a.localeCompare(b, 'es')), ptView.encargado);
-    if (d.status === 'error') { tbody.replaceChildren(msgRow('No se pudo cargar la matriz de protocolos.', 8)); $p('pt-count').textContent = ''; return; }
-    if (d.status !== 'ok') { tbody.replaceChildren(msgRow('Cargando matriz de protocolos…', 8)); $p('pt-count').textContent = ''; return; }
+    if (d.status === 'error') { tbody.replaceChildren(msgRow('No se pudo cargar la matriz de protocolos.', 10)); $p('pt-count').textContent = ''; return; }
+    if (d.status !== 'ok') { tbody.replaceChildren(msgRow('Cargando matriz de protocolos…', 10)); $p('pt-count').textContent = ''; return; }
     const q = ptView.q.trim().toLowerCase();
     const filtered = all.filter((p) =>
       (!ptView.disciplina || p.disciplina === ptView.disciplina) &&
@@ -1270,7 +1308,7 @@
     const rows = sortRows(filtered, ptView, 'codigo', { formato: (p) => formatoRank[p.formato] });
     markSort('pt-table', ptView);
     $p('pt-count').textContent = rows.length === all.length ? all.length + ' protocolos' : rows.length + ' de ' + all.length;
-    if (!rows.length) { tbody.replaceChildren(msgRow('Ningún protocolo coincide con los filtros.', 8)); return; }
+    if (!rows.length) { tbody.replaceChildren(msgRow('Ningún protocolo coincide con los filtros.', 10)); return; }
     tbody.replaceChildren(...rows.map((p) => {
       const tr = mk('tr');
       const code = mk('td', 'cso-code');
@@ -1286,8 +1324,11 @@
       const requeridos = mk('td', 'cso-num');
       if (p.cantidad_definida) requeridos.append(mk('b', null, qty(p.cantidad_total)));
       else requeridos.append(mk('small', null, 'Sin asignar'));
+      const entregados = mk('td', 'cso-num', p.cantidad_definida ? qty(p.cantidad_entregados ?? 0) : '–');
       const aprobados = mk('td', 'cso-num cso-aprob', p.cantidad_definida ? qty(p.cantidad_aprobados ?? 0) : '–');
-      tr.append(code, mk('td', 'cso-name', p.nombre), disc, enc, form, ejecutados, requeridos, aprobados);
+      const estado = mk('td', 'cso-col-hide');
+      if (p.estado_protocolo) estado.append(estadoChip(p));
+      tr.append(code, mk('td', 'cso-name', p.nombre), disc, enc, form, estado, requeridos, ejecutados, entregados, aprobados);
       return tr;
     }));
   }
