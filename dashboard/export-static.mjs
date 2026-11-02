@@ -100,6 +100,7 @@ const live = `
   let lastLoad = 0;
   const loadLive = async () => {
     lastLoad = Date.now();
+    meta.innerHTML = '<b>Estado documental al:</b> ' + ${JSON.stringify(FECHA)} + ' <span class="cso-saved">(leyendo Google Drive…)</span>';
     try {
       const [files, times] = await Promise.all([
         Promise.all(SOURCES.map(([, fileId]) => download(fileId))),
