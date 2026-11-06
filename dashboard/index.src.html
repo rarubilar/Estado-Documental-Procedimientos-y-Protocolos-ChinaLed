@@ -340,6 +340,7 @@
             <th data-field="codigo"><button class="cso-th" type="button" data-sort="codigo">Código</button></th>
             <th data-field="nombre"><button class="cso-th" type="button" data-sort="nombre">Procedimiento</button></th>
             <th data-field="disciplina" class="cso-col-hide"><button class="cso-th" type="button" data-sort="disciplina">Disciplina</button></th>
+            <th data-field="responsable" class="cso-col-hide"><button class="cso-th" type="button" data-sort="responsable">Responsable</button></th>
             <th data-field="revision"><button class="cso-th" type="button" data-sort="revision">Rev.</button></th>
             <th data-field="estado"><button class="cso-th" type="button" data-sort="estado">Estado</button></th>
           </tr>
@@ -487,12 +488,13 @@
   dash.calc('procedimientos', {
     inputs: ['matriz_proc'],
     title: 'Procedimientos con estado',
-    description: 'Cada procedimiento con su estado ITO (A, D, E, R) y su revisión vigente traducidos a la leyenda de la matriz; una celda vacía o "-" cuenta como no creado.',
+    description: 'Cada procedimiento con su estado ITO (A, D, E, R) y su revisión vigente traducidos a la leyenda de la matriz; una celda vacía o "-" cuenta como no creado. Los no creados cuyo responsable es N/A, Delta, SAESA o Rimalco quedan con suma = false: siguen en la tabla, pero no entran en los conteos.',
     fn: (matriz_proc) => matriz_proc.map((p) => {
       const ESTADOS = { A: 'Aprobado', E: 'Enviado a ITO', D: 'En desarrollo', R: 'Rechazado' };
       const est = String(p.estado || '').trim().toUpperCase();
       const rev = String(p.revision || '').trim().toUpperCase();
       const resp = String(p.responsable || '').trim();
+      const estado = ESTADOS[est] || 'No creado';
       return {
         codigo: p.codigo,
         nombre: p.nombre,
@@ -502,7 +504,8 @@
         responsable_tipo: !resp ? 'Sin asignar' : /^crear nuevo$/i.test(resp) ? 'Por crear' : /^contratista/i.test(resp) ? 'Externo' : 'Interno',
         revision: rev && rev !== '-' ? rev : '–',
         revision_tipo: rev === '0' ? 'Aprobada' : /^\d+$/.test(rev) ? 'Con observaciones' : /^[A-Z]$/.test(rev) ? 'Devuelta a revisión' : 'No creado',
-        estado: ESTADOS[est] || 'No creado',
+        estado,
+        suma: !(estado === 'No creado' && /^(n\/a|delta|saesa|rimalco)$/i.test(resp)),
         color_disciplina: p.color_disciplina,
         color_procedimiento: p.color_procedimiento,
         color_responsable: p.color_responsable,
@@ -513,8 +516,9 @@
   dash.calc('kpis', {
     inputs: ['procedimientos'],
     title: 'Resumen de estados',
-    description: 'Conteo de procedimientos por estado documental ITO; % aprobado = aprobados / total de procedimientos de la matriz.',
-    fn: (procedimientos) => {
+    description: 'Conteo de procedimientos por estado documental ITO; % aprobado = aprobados / total. Solo cuenta los procedimientos con suma = true.',
+    fn: (filas) => {
+      const procedimientos = filas.filter((p) => p.suma);
       const n = (e) => procedimientos.filter((p) => p.estado === e).length;
       const total = procedimientos.length;
       const aprobados = n('Aprobado');
@@ -534,10 +538,10 @@
   dash.calc('por_disciplina', {
     inputs: ['procedimientos'],
     title: 'Estados por disciplina',
-    description: 'Procedimientos de cada disciplina (fila 6 de la matriz) contados por estado documental ITO, en el orden de la matriz, con el color de la disciplina.',
+    description: 'Procedimientos de cada disciplina (fila 6 de la matriz) contados por estado documental ITO, en el orden de la matriz, con el color de la disciplina. Solo cuenta los procedimientos con suma = true.',
     fn: (procedimientos) => {
       const groups = new Map();
-      for (const p of procedimientos) {
+      for (const p of procedimientos.filter((x) => x.suma)) {
         const g = groups.get(p.disciplina) || { disciplina: p.disciplina, color: p.color_disciplina, total: 0, aprobado: 0, enviado: 0, desarrollo: 0, rechazado: 0, sin_emitir: 0 };
         g.total += 1;
         g[{ 'Aprobado': 'aprobado', 'Enviado a ITO': 'enviado', 'En desarrollo': 'desarrollo', 'Rechazado': 'rechazado' }[p.estado] || 'sin_emitir'] += 1;
@@ -769,7 +773,7 @@
     { key: 'rechazado', kpi: 'rechazados', label: 'Rechazado', def: 'Devuelto por ITO (R)', bg: '#F4CCCC', fg: '#990000' },
     { key: 'sin_emitir', kpi: 'sin_emitir', label: 'No creado', def: 'Sin estado ni revisión (–)', bg: '#E7E6E6', fg: '#666666' },
   ];
-  const TOTAL = { kpi: 'total', label: 'Total', def: 'Procedimientos en la matriz', bg: '#FFFFFF', fg: '#1B2430' };
+  const TOTAL = { kpi: 'total', label: 'Total', def: 'Sin los no creados de N/A, Delta, SAESA y Rimalco', bg: '#FFFFFF', fg: '#1B2430' };
   const STATE_BY_LABEL = Object.fromEntries(STATES.map((s) => [s.label, s]));
   const edge = (s) => s.fg + '40';
   const pct = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 0 });
@@ -935,7 +939,7 @@
     sel.replaceChildren(new Option(label, ''), ...values.map((v) => new Option(v, v)));
     sel.value = values.includes(current) ? current : '';
   };
-  const rowMsg = (text) => { const tr = el('tr'); const td = el('td', 'cso-empty', text); td.colSpan = 5; tr.append(td); return tr; };
+  const rowMsg = (text) => { const tr = el('tr'); const td = el('td', 'cso-empty', text); td.colSpan = 6; tr.append(td); return tr; };
 
   function drawTable() {
     const d = dash.data('procedimientos');
@@ -979,6 +983,8 @@
       const name = el('td', 'cso-name', p.nombre);
       const disc = el('td', 'cso-col-hide');
       disc.append(chip(p.disciplina, p.color_disciplina || '#1F4E79', 'cso-chip-disc'));
+      const respTd = el('td', 'cso-col-hide');
+      respTd.append(respChip(p.responsable, p.responsable_tipo));
       const revTd = el('td');
       const rev = el('span', 'cso-rev', p.revision);
       rev.dataset.t = p.revision_tipo;
@@ -992,7 +998,7 @@
       pill.style.setProperty('--pc-bg', s.bg);
       pill.style.setProperty('--pc-fg', s.fg);
       estTd.append(pill);
-      tr.append(code, name, disc, revTd, estTd);
+      tr.append(code, name, disc, respTd, revTd, estTd);
       return tr;
     }));
   }
