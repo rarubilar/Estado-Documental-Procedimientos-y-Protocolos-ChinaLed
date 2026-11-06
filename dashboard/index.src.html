@@ -213,7 +213,7 @@
   .cso-rev { display: inline-block; min-width: 2.2em; text-align: center; padding: 2px 6px; border-radius: 4px; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
   .cso-rev[data-t="Aprobada"] { background: #C6EFCE; border-color: #C6EFCE; color: #006100; }
   .cso-rev[data-t="Con observaciones"] { background: #FFE699; border-color: #FFE699; color: #7F6000; }
-  .cso-rev[data-t="Devuelta a revisión"] { background: color-mix(in srgb, #F4CCCC calc(40% + var(--lv, 1) * 15%), #FFFFFF); border-color: #F4CCCC; color: #990000; font-weight: 600; }
+  .cso-rev[data-t="Devuelta a revisión"] { font-weight: 600; }
   .cso-empty { padding: var(--cds-pad-lg); text-align: center; color: var(--color-fg-muted); font-size: var(--fs-caption); }
   .cso-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cso-num small { color: var(--color-fg-muted); }
@@ -489,13 +489,13 @@
   dash.calc('procedimientos', {
     inputs: ['matriz_proc'],
     title: 'Procedimientos con estado',
-    description: 'Cada procedimiento con su estado ITO (A, D, E, R) y su revisión vigente traducidos a la leyenda de la matriz; una celda vacía o "-" cuenta como no creado. Los no creados cuyo responsable es N/A, Delta, SAESA o Rimalco quedan con suma = false: siguen en la tabla, pero no entran en los conteos.',
+    description: 'Cada procedimiento con su estado ITO (A, D, E, R) y su revisión vigente traducidos a la leyenda de la matriz; una celda vacía o "-" cuenta como no creado. Los no creados cuyo responsable es N/A, Delta, SAESA o Rimalco pasan a "No aplica" con suma = false: siguen en la tabla, pero no entran en los conteos.',
     fn: (matriz_proc) => matriz_proc.map((p) => {
       const ESTADOS = { A: 'Aprobado', E: 'Enviado a ITO', D: 'En desarrollo', R: 'Rechazado' };
       const est = String(p.estado || '').trim().toUpperCase();
       const rev = String(p.revision || '').trim().toUpperCase();
       const resp = String(p.responsable || '').trim();
-      const estado = ESTADOS[est] || 'No creado';
+      const noAplica = !ESTADOS[est] && /^(n\/a|delta|saesa|rimalco)$/i.test(resp);
       return {
         codigo: p.codigo,
         nombre: p.nombre,
@@ -505,8 +505,8 @@
         responsable_tipo: !resp ? 'Sin asignar' : /^crear nuevo$/i.test(resp) ? 'Por crear' : /^contratista/i.test(resp) ? 'Externo' : 'Interno',
         revision: rev && rev !== '-' ? rev : '–',
         revision_tipo: rev === '0' ? 'Aprobada' : /^\d+$/.test(rev) ? 'Con observaciones' : /^[A-Z]$/.test(rev) ? 'Devuelta a revisión' : 'No creado',
-        estado,
-        suma: !(estado === 'No creado' && /^(n\/a|delta|saesa|rimalco)$/i.test(resp)),
+        estado: noAplica ? 'No aplica' : ESTADOS[est] || 'No creado',
+        suma: !noAplica,
         color_disciplina: p.color_disciplina,
         color_procedimiento: p.color_procedimiento,
         color_responsable: p.color_responsable,
@@ -774,8 +774,11 @@
     { key: 'rechazado', kpi: 'rechazados', label: 'Rechazado', def: 'Devuelto por ITO (R)', bg: '#F4CCCC', fg: '#990000' },
     { key: 'sin_emitir', kpi: 'sin_emitir', label: 'No creado', def: 'Sin estado ni revisión (–)', bg: '#E7E6E6', fg: '#666666' },
   ];
-  const TOTAL = { kpi: 'total', label: 'Total', def: 'Sin los no creados de N/A, Delta, SAESA y Rimalco', bg: '#FFFFFF', fg: '#1B2430' };
-  const STATE_BY_LABEL = Object.fromEntries(STATES.map((s) => [s.label, s]));
+  const TOTAL = { kpi: 'total', label: 'Total', def: 'Sin los procedimientos «No aplica»', bg: '#FFFFFF', fg: '#1B2430' };
+  // Only in the list: these procedures are not counted, so it stays out of STATES (KPI, pie, bars).
+  const NO_APLICA = { label: 'No aplica', bg: '#E7E6E6', fg: '#808080' };
+  const LIST_STATES = [...STATES, NO_APLICA];
+  const STATE_BY_LABEL = Object.fromEntries(LIST_STATES.map((s) => [s.label, s]));
   const edge = (s) => s.fg + '40';
   const pct = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 0 });
   const $ = (id) => document.getElementById(id);
@@ -948,7 +951,7 @@
     const all = d.status === 'ok' ? d.data : [];
     const uniq = (f) => [...new Set(all.map((p) => p[f]))];
     fillSelect($('cso-f-disc'), 'Todas las disciplinas', uniq('disciplina'), view.disciplina);
-    fillSelect($('cso-f-est'), 'Todos los estados', STATES.map((s) => s.label).filter((l) => all.some((p) => p.estado === l)), view.estado);
+    fillSelect($('cso-f-est'), 'Todos los estados', LIST_STATES.map((s) => s.label).filter((l) => all.some((p) => p.estado === l)), view.estado);
     fillSelect($('cso-f-resp'), 'Todos los responsables', uniq('responsable').sort((a, b) => (a === 'Sin asignar') - (b === 'Sin asignar') || a.localeCompare(b, 'es')), view.responsable);
 
     if (d.status === 'error') { tbody.replaceChildren(rowMsg('No se pudo cargar la matriz.')); $('cso-count').textContent = ''; return; }
@@ -961,7 +964,7 @@
       (!view.responsable || p.responsable === view.responsable) &&
       (!q || (p.codigo + ' ' + p.nombre).toLowerCase().includes(q)));
     const order = Object.fromEntries(all.map((p, i) => [p.codigo, i]));
-    const stateOrder = Object.fromEntries(STATES.map((s, i) => [s.label, i]));
+    const stateOrder = Object.fromEntries(LIST_STATES.map((s, i) => [s.label, i]));
     const keyOf = (p) => view.sort === 'columna' ? order[p.codigo] : view.sort === 'estado' ? stateOrder[p.estado] : String(p[view.sort]);
     rows.sort((x, y) => {
       const a = keyOf(x), b = keyOf(y);
@@ -992,7 +995,7 @@
       const revTd = el('td');
       const rev = el('span', 'cso-rev', p.revision);
       rev.dataset.t = p.revision_tipo;
-      if (p.revision_tipo === 'Devuelta a revisión') rev.style.setProperty('--lv', String(Math.min(4, p.revision.charCodeAt(0) - 64)));
+      if (p.revision_tipo === 'Devuelta a revisión') rev.style.background = rev.style.borderColor = (STATE_BY_LABEL[p.estado] || STATE_BY_LABEL['No creado']).bg;
       rev.title = p.revision_tipo;
       rev.style.color = (STATE_BY_LABEL[p.estado] || STATE_BY_LABEL['No creado']).fg;
       revTd.append(rev);
